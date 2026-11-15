@@ -1,0 +1,37 @@
+ANIMAL WARRIORS - 3D LOOK TEST
+=====================================
+How to open and play it on your PC (Godot 4.7.2)
+
+1. Unzip this folder somewhere easy, for example:  C:\Goldenmayhem\AnimalWarriors
+2. Open Godot (Godot_v4.7.2-stable_win64.exe).
+3. In the Project Manager click  Import  (top left).
+4. Browse to the unzipped folder, pick the file  project.godot , click  Open , then  Import & Edit.
+   (First time only: Godot spends a few seconds importing the pictures and sounds.)
+5. Press  F5  (or the Play triangle, top right) to start the game.
+6. Pick ARENA CAMERA (wide) or CLOSE CAMERA (Street Fighter distance).
+   Tap the "You play" button first if you want to be the Kangaroo instead of the Hyena.
+
+CONTROLS
+  Keyboard:  A / D = move      W = aim up      S = aim down (hold on a thin platform to drop through)
+             SPACE = jump (3 jumps: ground + 2 in the air; also wall jump)
+             J = light attack  K = heavy attack (HOLD K to charge)   L = dodge
+             H = grab the falling axe / throw it
+  Mouse:     you can click the on-screen buttons too (they are the phone controls).
+  Controller: left stick, A jump, X light, Y heavy, RB dodge, LB grab/throw.
+
+WHAT EACH ATTACK DOES (light = J, heavy = K)
+  Light on the ground:  jab (no direction), uppercut (up), low sweep kick (down)
+  Light in the air:     flying kick, flip kick (up), stomp (down)
+  Heavy:                signature move (Hyena FRENZY combo / Kangaroo TAIL KICK)
+                        up = Sky Launcher, down = Ground Slam, down in air = Meteor Pound
+  With the axe:         Axe Chop (light), Axe Riser (up), Axe Cleave (heavy). Press H to throw it.
+
+ARENA: one flat floor, nothing to fall off. Get launched past the screen edge = K.O.
+RULES: 3 lives each. Damage % goes up when you are hit; the higher it is, the further you fly.
+Fly off the screen edge = K.O.  A health potion drops now and then (takes 25% off).
+
+Nothing in this folder contains passwords or keys.
+
+CREDITS: the stand-in 3D body and its base animations are "Mannequiny" by GDQuest
+and contributors (https://www.gdquest.com/), CC-BY 4.0 / MIT. It is a placeholder
+until each warrior has its own model.
