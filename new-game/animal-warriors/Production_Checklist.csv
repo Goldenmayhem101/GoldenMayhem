@@ -1,0 +1,111 @@
+Number,Character,Category,Batch,Status
+1,Lion,Mammals,1,Created
+2,Tiger,Mammals,1,Created
+3,Wolf,Mammals,1,Created
+4,Hyena,Mammals,1,Created
+5,Gorilla,Mammals,1,Created
+6,Elephant,Mammals,2,Created
+7,Rhinoceros,Mammals,2,Created
+8,Bear,Mammals,2,Created
+9,Kangaroo,Mammals,2,Created
+10,Bat,Mammals,2,Created
+11,Eagle,Birds,3,Created
+12,Owl,Birds,3,Created
+13,Rooster,Birds,3,Created
+14,Raven,Birds,3,Created
+15,Peacock,Birds,3,Created
+16,Falcon,Birds,4,Created
+17,Vulture,Birds,4,Created
+18,Ostrich,Birds,4,Created
+19,Penguin,Birds,4,Created
+20,Parrot,Birds,4,Created
+21,Crocodile,Reptiles,5,Created
+22,Alligator,Reptiles,5,Created
+23,Cobra,Reptiles,5,Created
+24,Python,Reptiles,5,Created
+25,Komodo Dragon,Reptiles,5,Created
+26,Iguana,Reptiles,6,Created
+27,Chameleon,Reptiles,6,Created
+28,Tortoise,Reptiles,6,Created
+29,Snapping Turtle,Reptiles,6,Created
+30,Gecko,Reptiles,6,Created
+31,Poison Dart Frog,Amphibians,7,Created
+32,Bullfrog,Amphibians,7,Created
+33,Tree Frog,Amphibians,7,Created
+34,Toad,Amphibians,7,Created
+35,Axolotl,Amphibians,7,Created
+36,Salamander,Amphibians,8,Created
+37,Newt,Amphibians,8,Created
+38,Caecilian,Amphibians,8,Created
+39,Hellbender,Amphibians,8,Created
+40,Glass Frog,Amphibians,8,Created
+41,Great White Shark,Fish,9,Created
+42,Manta Ray,Fish,9,Created
+43,Swordfish,Fish,9,Created
+44,Anglerfish,Fish,9,Created
+45,Piranha,Fish,9,Created
+46,Eel,Fish,10,Created
+47,Seahorse,Fish,10,Created
+48,Lionfish,Fish,10,Created
+49,Tuna,Fish,10,Created
+50,Pufferfish,Fish,10,Created
+51,Stag Beetle,Insects,11,Created
+52,Rhinoceros Beetle,Insects,11,Created
+53,Ant,Insects,11,Created
+54,Praying Mantis,Insects,11,Created
+55,Wasp,Insects,11,Created
+56,Hornet,Insects,12,Pending
+57,Dragonfly,Insects,12,Pending
+58,Butterfly,Insects,12,Pending
+59,Grasshopper,Insects,12,Pending
+60,Moth,Insects,12,Pending
+61,Tarantula,Arachnids,13,Pending
+62,Black Widow Spider,Arachnids,13,Pending
+63,Emperor Scorpion,Arachnids,13,Pending
+64,Wolf Spider,Arachnids,13,Pending
+65,Jumping Spider,Arachnids,13,Pending
+66,Trapdoor Spider,Arachnids,14,Pending
+67,Tick,Arachnids,14,Pending
+68,Mite,Arachnids,14,Pending
+69,Harvestman,Arachnids,14,Pending
+70,Camel Spider,Arachnids,14,Pending
+71,Lobster,Crustaceans,15,Pending
+72,Blue Crab,Crustaceans,15,Pending
+73,Mantis Shrimp,Crustaceans,15,Pending
+74,Hermit Crab,Crustaceans,15,Pending
+75,King Crab,Crustaceans,15,Pending
+76,Shrimp,Crustaceans,16,Pending
+77,Krill,Crustaceans,16,Pending
+78,Barnacle,Crustaceans,16,Pending
+79,Crayfish,Crustaceans,16,Pending
+80,Coconut Crab,Crustaceans,16,Pending
+81,Giant Pacific Octopus,Mollusks,17,Pending
+82,Blue-Ringed Octopus,Mollusks,17,Pending
+83,Common Squid,Mollusks,17,Pending
+84,Colossal Squid,Mollusks,17,Pending
+85,Cuttlefish,Mollusks,17,Pending
+86,Chambered Nautilus,Mollusks,18,Pending
+87,Garden Snail,Mollusks,18,Pending
+88,Sea Slug,Mollusks,18,Pending
+89,Giant Clam,Mollusks,18,Pending
+90,Mussel,Mollusks,18,Pending
+91,Jellyfish,Other Sea Animals,19,Pending
+92,Coral,Other Sea Animals,19,Pending
+93,Sea Anemone,Other Sea Animals,19,Pending
+94,Sea Star,Other Sea Animals,19,Pending
+95,Sea Urchin,Other Sea Animals,19,Pending
+96,Sea Cucumber,Other Sea Animals,20,Pending
+97,Brittle Star,Other Sea Animals,20,Pending
+98,Sea Sponge,Other Sea Animals,20,Pending
+99,Portuguese Man o War,Other Sea Animals,20,Pending
+100,Sea Lily,Other Sea Animals,20,Pending
+101,Earthworm,Worm-like Animals,21,Pending
+102,Leech,Worm-like Animals,21,Pending
+103,Planarian,Worm-like Animals,21,Pending
+104,Giant Tube Worm,Worm-like Animals,21,Pending
+105,Bristle Worm,Worm-like Animals,21,Pending
+106,Ribbon Worm,Worm-like Animals,22,Pending
+107,Roundworm,Worm-like Animals,22,Pending
+108,Acorn Worm,Worm-like Animals,22,Pending
+109,Peanut Worm,Worm-like Animals,22,Pending
+110,Arrow Worm,Worm-like Animals,22,Pending

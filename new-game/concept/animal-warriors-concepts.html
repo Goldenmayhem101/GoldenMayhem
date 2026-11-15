@@ -1,0 +1,533 @@
+<title>Animal Warriors Concepts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@600;800&family=Alegreya+Sans:wght@400;700;800&display=swap">
+<style>
+/* Layout: torchlit arena. Title + squad picker, tab bar of four modes, each mode = phone frame (playable) beside a scouting report. Deliberately single dark theme. */
+:root{
+  --night:#17110c; --pit:#231a12; --stone:#33271c; --line:#4a3a2a;
+  --ivory:#f2e4cb; --dim:#bba88a; --bronze:#d39445; --bronze-hi:#f0b865;
+  --arcane:#59b8ff; --blood:#e0503f; --heal:#5fd07a;
+  --display:"Grenze Gotisch", "Palatino Linotype", Georgia, serif;
+  --body:"Alegreya Sans", "Trebuchet MS", system-ui, sans-serif;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--night);color:var(--ivory)}
+body{font-family:var(--body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px;
+  background:radial-gradient(1200px 600px at 50% -200px,#3a2614 0%,transparent 70%),var(--night)}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+button{font-family:var(--body);cursor:pointer}
+button:focus-visible,.chip:focus-visible{outline:3px solid var(--arcane);outline-offset:2px}
+header{display:flex;flex-direction:column;gap:8px}
+.eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze)}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(44px,9vw,84px);line-height:.9;margin:0;color:var(--ivory);text-wrap:balance;
+  text-shadow:0 2px 0 #000,0 0 30px rgba(211,148,69,.25)}
+.lede{max-width:62ch;color:var(--dim);margin:0}
+h2{font-family:var(--display);font-weight:600;font-size:30px;margin:0;line-height:1}
+h3{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--bronze);margin:0}
+
+/* squad picker */
+.squad{display:flex;flex-direction:column;gap:10px}
+.squad-head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+.squad-head p{margin:0;color:var(--dim);font-size:15px}
+.roster{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+@media (max-width:640px){.roster{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.chip{position:relative;border:2px solid var(--line);background:linear-gradient(#2c2117,#1d150e);border-radius:10px;padding:4px 4px 6px;color:var(--ivory);
+  display:flex;flex-direction:column;align-items:center;gap:2px;transition:border-color .15s,transform .15s}
+.chip:hover{transform:translateY(-2px)}
+.chip .face{width:100%;aspect-ratio:1;border-radius:7px;background-size:210% auto;background-position:50% 3%;background-repeat:no-repeat;background-color:#3a2b1d}
+.chip b{font-size:14px;line-height:1.1}
+.chip small{font-size:11px;color:var(--dim);line-height:1}
+.chip[aria-pressed="true"]{border-color:var(--bronze-hi);box-shadow:0 0 0 1px var(--bronze-hi),0 0 18px rgba(240,184,101,.35)}
+.chip .slot{position:absolute;top:-8px;right:-6px;background:var(--bronze);color:#1b120a;font-weight:800;font-size:12px;border-radius:99px;min-width:22px;height:22px;display:grid;place-items:center}
+
+/* tabs */
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;border-bottom:2px solid var(--line)}
+.tab{background:none;border:0;color:var(--dim);padding:10px 6px 12px;font-weight:800;font-size:16px;border-bottom:4px solid transparent;margin-bottom:-2px;line-height:1.1}
+.tab span{display:block;font-weight:400;font-size:12px;color:var(--dim);opacity:.8}
+.tab[aria-selected="true"]{color:var(--ivory);border-bottom-color:var(--bronze)}
+@media (max-width:520px){.tab{font-size:14px}.tab span{display:none}}
+
+.mode{display:grid;grid-template-columns:390px minmax(0,1fr);gap:32px;align-items:start}
+@media (max-width:860px){.mode{grid-template-columns:minmax(0,1fr)}}
+
+/* phone frame */
+.frame{position:relative;width:100%;max-width:390px;height:680px;margin:0 auto;border-radius:28px;overflow:hidden;border:3px solid #5b4630;
+  background:linear-gradient(#2a1d12 0%,#3b2a18 45%,#7b5a34 46%,#a37c4b 100%);box-shadow:0 20px 50px rgba(0,0,0,.6),inset 0 0 0 2px #000;
+  display:flex;flex-direction:column;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.hud{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 6px;gap:8px;font-weight:800;font-size:14px;color:var(--ivory);
+  background:linear-gradient(rgba(0,0,0,.55),transparent)}
+.hud .stage{font-family:var(--display);font-size:20px;font-weight:600}
+.pill{border:2px solid var(--bronze);background:#2a1c10;color:var(--ivory);border-radius:99px;padding:4px 12px;font-weight:800;font-size:13px}
+.pill[aria-pressed="true"]{background:var(--bronze);color:#1b120a}
+.hint{font-size:13px;color:var(--ivory);text-align:center;padding:4px 12px;min-height:24px;text-shadow:0 1px 2px #000}
+.overlay{position:absolute;inset:0;background:rgba(15,10,6,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:20;text-align:center;padding:24px}
+.overlay strong{font-family:var(--display);font-size:52px;line-height:1;color:var(--bronze-hi)}
+.overlay.lose strong{color:var(--blood)}
+.overlay p{margin:0;color:var(--dim)}
+.big{background:linear-gradient(#f0b865,#b8742c);color:#1b120a;border:0;border-radius:12px;padding:12px 26px;font-weight:800;font-size:17px;box-shadow:0 4px 0 #6d4317}
+.big:active{transform:translateY(2px);box-shadow:0 2px 0 #6d4317}
+
+/* shared fighter bits */
+.flip{transform:scaleX(-1)}
+.float{position:absolute;font-weight:800;font-size:22px;pointer-events:none;z-index:15;text-shadow:0 2px 0 #000,0 0 6px #000;animation:rise .9s ease-out forwards;white-space:nowrap}
+.float.dmg{color:#fff}.float.crit{color:var(--arcane);font-size:28px}.float.heal{color:var(--heal)}.float.info{color:var(--bronze-hi);font-size:16px}
+@keyframes rise{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-50px)}}
+.bar{height:7px;background:#000;border-radius:4px;overflow:hidden;border:1px solid #000}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#3fbf5a,#8be07a);transition:width .25s}
+.bar.foe i{background:linear-gradient(90deg,#c63a2c,#f07a5a)}
+.bar.mana i{background:linear-gradient(90deg,#2a7fd6,#7fd0ff)}
+.hitfx{animation:hit .3s}
+@keyframes hit{0%,100%{filter:none;translate:0}30%{filter:brightness(2) sepia(1) hue-rotate(-40deg) saturate(4);translate:6px}60%{translate:-5px}}
+.magicfx{animation:magic .7s}
+@keyframes magic{0%,100%{filter:none}40%{filter:drop-shadow(0 0 14px var(--arcane)) drop-shadow(0 0 4px #fff) brightness(1.3)}}
+.dead{opacity:.25;filter:grayscale(1);transition:opacity .4s}
+@media (prefers-reduced-motion:reduce){.float{animation-duration:.01s}.hitfx,.magicfx{animation:none}}
+
+/* TEAM BATTLE */
+#tb .field{position:relative;flex:1}
+#tb .u{position:absolute;width:30%;display:flex;flex-direction:column;align-items:center;gap:4px;transition:translate .16s ease-out}
+#tb .u img{height:150px;width:auto;pointer-events:none}
+#tb .u .bar{width:70%}
+#tb .u.lungeR{translate:40px 0}#tb .u.lungeL{translate:-40px 0}
+#tb .skills{display:flex;justify-content:center;gap:14px;padding:8px 10px 14px;background:linear-gradient(transparent,rgba(0,0,0,.6))}
+.skill{position:relative;width:78px;height:78px;border-radius:50%;border:3px solid #000;background-size:200% auto;background-position:50% 4%;background-color:#3a2b1d;padding:0;
+  box-shadow:0 0 0 3px #000}
+.skill::after{content:"";position:absolute;inset:-6px;border-radius:50%;background:conic-gradient(var(--arcane) calc(var(--e,0)*1%),rgba(0,0,0,.6) 0);z-index:-1}
+.skill.ready{animation:ready 1s infinite}
+@keyframes ready{50%{box-shadow:0 0 0 3px #000,0 0 22px var(--arcane)}}
+.skill span{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;white-space:nowrap;color:var(--ivory);text-shadow:0 1px 2px #000}
+.skill.off{filter:grayscale(1);opacity:.5}
+
+/* DUEL */
+#du .bars{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 14px}
+#du .bars div{display:flex;flex-direction:column;gap:3px;font-weight:800;font-size:14px}
+#du .bars div:last-child{text-align:right}
+#du .stage{position:relative;flex:1}
+#du .f{position:absolute;bottom:4%;height:330px;transition:translate .12s ease-out}
+#du .f img{height:100%;width:auto}
+#du .me{left:-2%}#du .foe{right:-2%}
+#du .me.lunge{translate:70px 0}#du .foe.lunge{translate:-70px 0}
+#du .foe.windup{filter:drop-shadow(0 0 12px var(--blood))}
+#du .guard::before{content:"";position:absolute;left:58%;top:30%;width:90px;height:110px;border-radius:12px 12px 45px 45px;border:5px solid var(--bronze-hi);
+  background:radial-gradient(circle at 50% 40%,rgba(240,184,101,.5),rgba(240,184,101,.08));z-index:2}
+#du .warn{position:absolute;right:30%;top:18%;font-family:var(--display);font-size:64px;color:var(--blood);text-shadow:0 2px 0 #000;z-index:3}
+#du .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px 14px 16px;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+.act{border:3px solid #000;border-radius:16px;padding:12px 4px;font-weight:800;font-size:16px;color:#1b120a;box-shadow:0 4px 0 #000;line-height:1.1}
+.act small{display:block;font-size:11px;font-weight:700;opacity:.8}
+.act:active{transform:translateY(2px);box-shadow:0 2px 0 #000}
+.act.strike{background:linear-gradient(#f3c27a,#c98636)}
+.act.block{background:linear-gradient(#d9cdb5,#8f826a)}
+.act.spell{background:linear-gradient(#9ad8ff,#3a8fdc)}
+.act:disabled{filter:grayscale(1) brightness(.6)}
+
+/* TACTICS */
+#tx .board{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;padding:6px 12px;flex:1;align-content:center}
+.cell{position:relative;aspect-ratio:1;border-radius:6px;background:rgba(60,42,24,.55);border:1px solid rgba(0,0,0,.35);padding:0}
+.cell.rock{background:radial-gradient(circle at 40% 35%,#8a7a66,#4b3f33 70%);border-color:#000}
+.cell.move{background:rgba(89,184,255,.35);border-color:var(--arcane)}
+.cell.target{background:rgba(224,80,63,.4);border-color:var(--blood)}
+.tok{position:absolute;inset:3px;border-radius:50%;background-size:210% auto;background-position:50% 3%;background-color:#3a2b1d;border:3px solid #3fbf5a;box-shadow:0 2px 0 #000}
+.tok.e{border-color:var(--blood)}
+.tok.sel{box-shadow:0 0 0 3px var(--bronze-hi),0 0 14px var(--bronze-hi)}
+.tok.done{filter:grayscale(.8) brightness(.7)}
+.tok .bar{position:absolute;left:8%;right:8%;bottom:-5px;height:6px}
+#tx .foot{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 14px 16px;background:linear-gradient(transparent,rgba(0,0,0,.65))}
+
+/* CARDS */
+#cb{background:linear-gradient(#251a10,#3c2a17 50%,#251a10)}
+.hero{display:flex;align-items:center;gap:10px;padding:6px 14px;font-weight:800}
+.hero .face{width:46px;height:46px;border-radius:50%;background-size:210% auto;background-position:50% 3%;border:3px solid var(--bronze);flex:none;background-color:#3a2b1d}
+.hero .bar{flex:1}
+.hero .hp{min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+.lanes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:4px 14px}
+.lane{height:118px;border:2px dashed rgba(240,184,101,.25);border-radius:10px;position:relative}
+.lane .mini{position:absolute;inset:2px;border-radius:8px;overflow:hidden;background:#2a1d12;border:2px solid #3fbf5a}
+.lane.e .mini{border-color:var(--blood)}
+.mini img{position:absolute;left:50%;top:-4px;height:220px;transform:translateX(-50%)}
+.stat{position:absolute;bottom:3px;min-width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;border:2px solid #000;color:#000;z-index:2}
+.stat.a{left:3px;background:var(--bronze-hi)}.stat.h{right:3px;background:var(--heal)}
+.mid{height:2px;margin:4px 14px;background:linear-gradient(90deg,transparent,var(--bronze),transparent)}
+.mana{display:flex;gap:4px;align-items:center}
+.gem{width:14px;height:14px;transform:rotate(45deg);border:2px solid #000;background:#203448}
+.gem.on{background:var(--arcane);box-shadow:0 0 6px var(--arcane)}
+.hand{display:flex;gap:6px;padding:6px 10px 6px;overflow-x:auto;min-height:150px}
+.card{flex:0 0 84px;height:136px;border-radius:9px;border:2px solid #000;background:linear-gradient(#f2e4cb,#d7c09a);color:#1b120a;position:relative;overflow:hidden;padding:0;text-align:center;
+  box-shadow:0 3px 0 #000;transition:transform .12s}
+.card:hover{transform:translateY(-4px)}
+.card.cant{filter:brightness(.55)}
+.card .art{position:absolute;left:4px;right:4px;top:4px;height:70px;border-radius:5px;overflow:hidden;background:#3a2b1d}
+.card .art img{position:absolute;left:50%;top:-3px;height:170px;transform:translateX(-50%)}
+.card .art.potion{background:radial-gradient(circle at 50% 60%,#ff6a5a 0 22px,#7a1d16 23px 26px,transparent 27px),radial-gradient(circle at 50% 30%,#6b4a2a 0 8px,transparent 9px),#3a2b1d}
+.card .art.bolt{background:radial-gradient(circle at 50% 50%,#fff 0 6px,#7fd0ff 7px 18px,#2a7fd6 19px 26px,transparent 34px),#1d2a3a}
+.card .cost{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:var(--arcane);border:2px solid #000;font-weight:800;display:grid;place-items:center;z-index:2;font-size:14px}
+.card .nm{position:absolute;top:76px;left:0;right:0;font-weight:800;font-size:13px;line-height:1.05;padding:0 3px}
+.card .tx{position:absolute;top:92px;left:0;right:0;font-size:10.5px;line-height:1.1;padding:0 4px;color:#4a3420}
+.card .stat{bottom:4px}
+#cb .foot{display:flex;justify-content:space-between;align-items:center;padding:4px 14px 12px;gap:8px}
+
+/* report */
+.report{display:flex;flex-direction:column;gap:18px;min-width:0}
+.report p{margin:0;max-width:62ch}
+.report ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;max-width:62ch}
+.scores{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 16px;align-items:center;max-width:420px}
+.pips{display:flex;gap:4px}
+.pips i{width:16px;height:16px;transform:rotate(45deg);border:2px solid var(--line);background:transparent}
+.pips i.on{background:var(--bronze);border-color:var(--bronze-hi)}
+.verdict{border-left:4px solid var(--bronze);padding:4px 0 4px 14px;color:var(--ivory)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:560px){.cols{grid-template-columns:1fr}}
+footer{color:var(--dim);font-size:14px;border-top:1px solid var(--line);padding-top:16px;max-width:75ch}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Goldenmayhem · game concept previews</div>
+    <h1>Animal Warriors</h1>
+    <p class="lede">Four ways your warriors could fight. Each tab is a small playable sketch of that game type, using your real character art. They're rough on purpose: the goal is to feel how each one plays before we pick.</p>
+  </header>
+
+  <section class="squad" aria-labelledby="sq">
+    <div class="squad-head"><h2 id="sq">Your squad</h2><p>Pick 3 warriors. Slot 1 fights in the Arena Duel. Rivals are picked from the rest.</p></div>
+    <div class="roster" id="roster"></div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="tb" aria-selected="true">Team Battle<span>collect &amp; auto-fight</span></button>
+    <button class="tab" role="tab" data-tab="du" aria-selected="false">Arena Duel<span>1-vs-1 action</span></button>
+    <button class="tab" role="tab" data-tab="tx" aria-selected="false">Tactics<span>grid strategy</span></button>
+    <button class="tab" role="tab" data-tab="cb" aria-selected="false">Card Battle<span>play your warriors</span></button>
+  </nav>
+
+  <!-- TEAM BATTLE -->
+  <section class="mode" data-mode="tb">
+    <div class="frame" id="tb">
+      <div class="hud"><span class="stage">Chapter 1 · Dust Pit</span><button class="pill" id="tb-auto" aria-pressed="false">Auto: Off</button></div>
+      <div class="hint" id="tb-hint">Warriors attack on their own. Tap a glowing portrait to cast its spell.</div>
+      <div class="field" id="tb-field"></div>
+      <div class="skills" id="tb-skills"></div>
+      <div class="overlay" id="tb-over" hidden><strong></strong><p></p><button class="big" data-restart="tb">Fight again</button></div>
+    </div>
+    <div class="report">
+      <h2>Team Battle</h2>
+      <p>Players collect warriors, build a team of 3 to 5, and send them through chapters of fights. Battles run automatically; the player's skill is in team choice, upgrades, and timing each warrior's spell. Between fights: unlock new warriors, level them up, and dress them in the Scout or Heavy Armor outfits from your sheets.</p>
+      <div class="scores" id="sc-tb"></div>
+      <div class="cols">
+        <div><h3>Why it fits</h3><ul><li>Uses the whole roster. 55 now and 110 later means years of "new warrior" updates.</li><li>One-thumb play suits casual players.</li><li>Natural rewarded ads: double rewards, revive, free chest.</li></ul></div>
+        <div><h3>Watch out for</h3><ul><li>Needs careful balancing as warriors are added.</li><li>Can feel passive if spells don't matter. Spell timing fixes that.</li></ul></div>
+      </div>
+      <p class="verdict">My pick. It shows off the most warriors with the least animation, and it's the easiest to grow after launch.</p>
+    </div>
+  </section>
+
+  <!-- DUEL -->
+  <section class="mode" data-mode="du" hidden>
+    <div class="frame" id="du">
+      <div class="hud"><span class="stage">Arena Duel</span><span id="du-round">Round 1</span></div>
+      <div class="bars">
+        <div><span id="du-pn"></span><div class="bar"><i id="du-php"></i></div><div class="bar mana"><i id="du-pmp"></i></div></div>
+        <div><span id="du-en"></span><div class="bar foe"><i id="du-ehp"></i></div></div>
+      </div>
+      <div class="hint" id="du-hint">When the rival flashes red, tap Block.</div>
+      <div class="stage" id="du-stage">
+        <div class="f me" id="du-me"><img alt="" class="flip"></div>
+        <div class="f foe" id="du-foe"><img alt=""></div>
+      </div>
+      <div class="pad">
+        <button class="act strike" id="du-strike">Strike<small>quick hit</small></button>
+        <button class="act block" id="du-block">Block<small>stop the blow</small></button>
+        <button class="act spell" id="du-spell">Spell<small>40 mana</small></button>
+      </div>
+      <div class="overlay" id="du-over" hidden><strong></strong><p></p><button class="big" data-restart="du">Next fight</button></div>
+    </div>
+    <div class="report">
+      <h2>Arena Duel</h2>
+      <p>One warrior against one rival, in real time. Strike, block when the rival winds up, and save mana for a big spell. A season ladder of rivals, with your warrior getting stronger between fights.</p>
+      <div class="scores" id="sc-du"></div>
+      <div class="cols">
+        <div><h3>Why it fits</h3><ul><li>The most exciting moment-to-moment play.</li><li>Shows your art big on screen.</li><li>12 warriors is plenty for a launch.</li></ul></div>
+        <div><h3>Watch out for</h3><ul><li>A good fighter needs real animation for every warrior: idle, attack, hit, block. That's the most art work by far.</li><li>Fewer natural ad moments.</li></ul></div>
+      </div>
+      <p class="verdict">The most fun to watch, and the most expensive to make well. Good as a second game or a mode inside Team Battle later.</p>
+    </div>
+  </section>
+
+  <!-- TACTICS -->
+  <section class="mode" data-mode="tx" hidden>
+    <div class="frame" id="tx">
+      <div class="hud"><span class="stage">Tactics · Broken Ford</span><span id="tx-turn">Turn 1</span></div>
+      <div class="hint" id="tx-hint">Tap one of your warriors (green ring).</div>
+      <div class="board" id="tx-board"></div>
+      <div class="foot"><span style="font-size:13px;color:var(--dim)">Spears reach 2 tiles, the Eagle 3</span><button class="pill" id="tx-end">End turn</button></div>
+      <div class="overlay" id="tx-over" hidden><strong></strong><p></p><button class="big" data-restart="tx">Play again</button></div>
+    </div>
+    <div class="report">
+      <h2>Tactics</h2>
+      <p>Turn-based battles on a grid, like chess with abilities. Move each warrior, then strike. Weapons matter: spears hit from 2 tiles away, the Tortoise is slow but hard to kill, the Gecko moves far. Maps add rocks, rivers and high ground.</p>
+      <div class="scores" id="sc-tx"></div>
+      <div class="cols">
+        <div><h3>Why it fits</h3><ul><li>Hardly any animation: warriors slide and flash.</li><li>Weapon types finally matter, which suits your designs.</li><li>Ads fit as "undo a move" or "extra reinforcement".</li></ul></div>
+        <div><h3>Watch out for</h3><ul><li>Slower, thinking game. A smaller audience than quick-play games.</li><li>Small tokens hide your detailed art.</li></ul></div>
+      </div>
+      <p class="verdict">The cheapest to build well, but your art is mostly seen as small tokens.</p>
+    </div>
+  </section>
+
+  <!-- CARDS -->
+  <section class="mode" data-mode="cb" hidden>
+    <div class="frame" id="cb">
+      <div class="hero"><div class="face" id="cb-eface"></div><div class="bar foe"><i id="cb-ehpb"></i></div><span class="hp" id="cb-ehp"></span></div>
+      <div class="lanes" id="cb-elanes"></div>
+      <div class="mid"></div>
+      <div class="lanes" id="cb-mlanes"></div>
+      <div class="hero"><div class="face" id="cb-mface"></div><div class="bar"><i id="cb-mhpb"></i></div><span class="hp" id="cb-mhp"></span></div>
+      <div class="foot"><div class="mana" id="cb-mana"></div><button class="pill" id="cb-end">End turn</button></div>
+      <div class="hand" id="cb-hand"></div>
+      <div class="overlay" id="cb-over" hidden><strong></strong><p></p><button class="big" data-restart="cb">Play again</button></div>
+    </div>
+    <div class="report">
+      <h2>Card Battle</h2>
+      <p>Every warrior is a card. Spend mana to put warriors into three lanes; at the end of your turn each one attacks whatever is across from it, or the rival chief if the lane is empty. Potions and spellbooks from your sheets become spell cards.</p>
+      <div class="scores" id="sc-cb"></div>
+      <div class="cols">
+        <div><h3>Why it fits</h3><ul><li>The reference sheets become card art straight away.</li><li>Collecting 110 cards is a strong long-term hook.</li><li>Easy ad rewards: free card pack, extra draw.</li></ul></div>
+        <div><h3>Watch out for</h3><ul><li>Card balance is fiddly.</li><li>Rules take a little teaching, so the tutorial matters.</li></ul></div>
+      </div>
+      <p class="verdict">A strong option if you like strategy games. Second place for me.</p>
+    </div>
+  </section>
+
+  <footer>These sketches leave out the standard Goldenmayhem kit (studio intro with "Produced by Shawn Morris", tutorial, daily challenge, gifts, shop, sound, rewarded ads). The real game gets all of it, plus all 12 launch warriors drawn at full quality.</footer>
+</div>
+
+<script>
+const W={
+ rhino:{n:"Rhino",r:"Heavy",hp:140,atk:16,spd:2,rng:1,sp:"Horn Charge",k:"big"},
+ tortoise:{n:"Tortoise",r:"Tank",hp:170,atk:11,spd:1,rng:1,sp:"Shell Mend",k:"heal"},
+ wolf:{n:"Wolf",r:"Spear",hp:110,atk:13,spd:3,rng:2,sp:"Pack Howl",k:"aoe"},
+ iguana:{n:"Iguana",r:"Spear",hp:115,atk:12,spd:2,rng:2,sp:"Spine Volley",k:"aoe"},
+ cobra:{n:"Cobra",r:"Striker",hp:95,atk:15,spd:3,rng:1,sp:"Venom Fang",k:"big"},
+ gecko:{n:"Gecko",r:"Rogue",hp:90,atk:14,spd:4,rng:1,sp:"Wall Dash",k:"big"},
+ hyena:{n:"Hyena",r:"Brawler",hp:120,atk:13,spd:3,rng:1,sp:"Frenzy",k:"big"},
+ kangaroo:{n:"Kangaroo",r:"Brawler",hp:110,atk:14,spd:4,rng:1,sp:"Tail Kick",k:"big"},
+ lion:{n:"Lion",r:"Leader",hp:130,atk:14,spd:3,rng:2,sp:"King's Roar",k:"aoe"},
+ tiger:{n:"Tiger",r:"Striker",hp:115,atk:16,spd:3,rng:1,sp:"Stripe Slash",k:"big"},
+ eagle:{n:"Eagle",r:"Flyer",hp:100,atk:13,spd:4,rng:3,sp:"Sky Dive",k:"aoe"},
+ bear:{n:"Bear",r:"Heavy",hp:150,atk:15,spd:2,rng:1,sp:"Maul",k:"big"}
+};
+const IDS=Object.keys(W), img=id=>`img/${id}.webp`;
+const $=s=>document.querySelector(s), rnd=(a,b)=>a+Math.random()*(b-a), pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const faceBg=id=>`background-image:url(${img(id)})`;
+function floatAt(container,x,y,text,cls){const f=document.createElement("div");f.className="float "+cls;f.textContent=text;f.style.left=x+"px";f.style.top=y+"px";container.appendChild(f);setTimeout(()=>f.remove(),950)}
+function floatOn(el,frame,text,cls){const r=el.getBoundingClientRect(),q=frame.getBoundingClientRect();floatAt(frame,r.left-q.left+r.width/2,r.top-q.top+20,text,cls)}
+function fx(el,c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c)}
+function overlay(id,win,title,msg){const o=$(id);o.hidden=false;o.classList.toggle("lose",!win);o.querySelector("strong").textContent=title;o.querySelector("p").textContent=msg}
+
+/* ---------- squad ---------- */
+let squad=["rhino","wolf","cobra"];
+try{const s=JSON.parse(localStorage.getItem("aw-squad")||"null");if(Array.isArray(s)&&s.length===3&&s.every(x=>W[x]))squad=s}catch(e){}
+function foes(n){return shuffle(IDS.filter(i=>!squad.includes(i))).slice(0,n)}
+function renderRoster(){
+  const r=$("#roster");r.innerHTML="";
+  IDS.forEach(id=>{const b=document.createElement("button");b.className="chip";const i=squad.indexOf(id);b.setAttribute("aria-pressed",i>=0);
+    b.innerHTML=`<div class="face" style="${faceBg(id)}"></div><b>${W[id].n}</b><small>${W[id].r}</small>${i>=0?`<span class="slot">${i+1}</span>`:""}`;
+    b.onclick=()=>{if(squad.includes(id))return;squad=[...squad.slice(1),id];try{localStorage.setItem("aw-squad",JSON.stringify(squad))}catch(e){}renderRoster();restart(current)};
+    r.appendChild(b)});
+}
+
+/* ---------- scores ---------- */
+const SC={tb:[5,4,4,5],du:[2,2,1,3],tx:[4,3,5,4],cb:[5,3,5,4]};
+const SL=["Uses your roster","Quick to build","Light on animation","Fits rewarded ads"];
+Object.entries(SC).forEach(([k,v])=>{$("#sc-"+k).innerHTML=v.map((n,i)=>`<span>${SL[i]}</span><span class="pips" aria-label="${n} of 5">${[1,2,3,4,5].map(p=>`<i class="${p<=n?"on":""}"></i>`).join("")}</span>`).join("")});
+
+/* ---------- TEAM BATTLE ---------- */
+const TB={timer:null,units:[],ptr:0,over:false,auto:false};
+const PPOS=[[2,4],[16,30],[0,56]], EPOS=[[68,4],[54,30],[70,56]];
+function tbStart(){
+  clearInterval(TB.timer);TB.over=false;TB.ptr=0;$("#tb-over").hidden=true;
+  const field=$("#tb-field");field.innerHTML="";
+  const mk=(id,side,i)=>{const w=W[id],m=side==="e"?.9:1;const u={id,side,max:Math.round(w.hp*m),atk:w.atk*m,spd:w.spd,en:side==="e"?0:30,alive:true};u.hp=u.max;
+    const d=document.createElement("div");d.className="u";const p=side==="p"?PPOS[i]:EPOS[i];d.style.left=p[0]+"%";d.style.top=p[1]+"%";
+    d.innerHTML=`<div class="bar ${side==="e"?"foe":""}"><i style="width:100%"></i></div><img alt="${w.n}" src="${img(id)}" class="${side==="p"?"flip":""}">`;
+    field.appendChild(d);u.el=d;return u};
+  TB.units=[...squad.map((id,i)=>mk(id,"p",i)),...foes(3).map((id,i)=>mk(id,"e",i))];
+  TB.queue=TB.units.slice().sort((a,b)=>b.spd-a.spd||(a.side==="p"?-1:1));
+  const sk=$("#tb-skills");sk.innerHTML="";
+  TB.units.filter(u=>u.side==="p").forEach(u=>{const b=document.createElement("button");b.className="skill";b.style.cssText=faceBg(u.id);
+    b.setAttribute("aria-label",`Cast ${W[u.id].sp}`);b.innerHTML=`<span>${W[u.id].sp}</span>`;b.onclick=()=>{if(!TB.over&&u.alive&&u.en>=100)tbCast(u)};u.btn=b;sk.appendChild(b)});
+  tbUI();TB.timer=setInterval(tbTick,650);
+}
+function tbUI(){TB.units.forEach(u=>{u.el.querySelector(".bar i").style.width=Math.max(0,u.hp/u.max*100)+"%";
+  if(u.btn){u.btn.style.setProperty("--e",Math.min(100,u.en));u.btn.classList.toggle("ready",u.alive&&u.en>=100);u.btn.classList.toggle("off",!u.alive)}})}
+const alive=s=>TB.units.filter(u=>u.side===s&&u.alive);
+function tbTick(){
+  if(TB.over)return;
+  let a,guard=0;do{a=TB.queue[TB.ptr++%TB.queue.length];guard++}while(!a.alive&&guard<12);
+  if(a.en>=100&&(a.side==="e"||TB.auto)){tbCast(a);return}
+  const t=pick(alive(a.side==="p"?"e":"p"));if(!t)return;tbHit(a,t,1);
+}
+function tbHit(a,t,mult,silent){
+  if(!silent){fx(a.el,a.side==="p"?"lungeR":"lungeL");setTimeout(()=>a.el.classList.remove("lungeR","lungeL"),220)}
+  setTimeout(()=>{if(!t.alive)return;const d=Math.round(a.atk*rnd(.85,1.15)*mult);t.hp-=d;fx(t.el,mult>1?"magicfx":"hitfx");
+    floatOn(t.el,$("#tb"),d,mult>1?"crit":"dmg");a.en+=mult>1?0:25;t.en+=12;
+    if(t.hp<=0){t.alive=false;t.hp=0;t.el.classList.add("dead")}tbUI();tbCheck()},silent?0:150);
+}
+function tbCast(a){
+  const w=W[a.id];a.en=0;fx(a.el,"magicfx");floatOn(a.el,$("#tb"),w.sp,"info");
+  const foesA=alive(a.side==="p"?"e":"p");
+  if(w.k==="heal"){alive(a.side).forEach(u=>{const h=Math.round(u.max*.3);u.hp=Math.min(u.max,u.hp+h);fx(u.el,"magicfx");floatOn(u.el,$("#tb"),"+"+h,"heal")});tbUI()}
+  else if(w.k==="aoe")foesA.forEach(t=>tbHit(a,t,1.4,true));
+  else{const t=foesA.sort((x,y)=>x.hp-y.hp)[0];if(t)tbHit(a,t,2.6,true)}
+  tbUI();
+}
+function tbCheck(){
+  if(TB.over)return;
+  if(!alive("e").length){TB.over=true;clearInterval(TB.timer);overlay("#tb-over",true,"Victory","+120 coins · watch an ad to double it")}
+  else if(!alive("p").length){TB.over=true;clearInterval(TB.timer);overlay("#tb-over",false,"Defeated","Upgrade your warriors or try another team")}
+}
+$("#tb-auto").onclick=e=>{TB.auto=!TB.auto;e.currentTarget.setAttribute("aria-pressed",TB.auto);e.currentTarget.textContent="Auto: "+(TB.auto?"On":"Off")};
+
+/* ---------- DUEL ---------- */
+const DU={round:1};
+function duStart(keepRound){
+  duStop();if(!keepRound)DU.round=1;$("#du-over").hidden=true;
+  const me=squad[0],foe=DU.foe&&keepRound?DU.foe:pick(IDS.filter(i=>i!==me));DU.foe=foe;
+  const sc=1+(DU.round-1)*.12;
+  DU.p={id:me,max:W[me].hp*1.2,atk:W[me].atk,mp:40};DU.p.hp=DU.p.max;
+  DU.e={id:foe,max:W[foe].hp*1.2*sc,atk:W[foe].atk*.85*sc};DU.e.hp=DU.e.max;
+  DU.block=false;DU.blockCd=false;DU.strikeCd=false;DU.over=false;
+  $("#du-me img").src=img(me);$("#du-foe img").src=img(foe);$("#du-pn").textContent=W[me].n;$("#du-en").textContent=W[foe].n;
+  $("#du-round").textContent="Round "+DU.round;$("#du-hint").textContent="When the rival flashes red, tap Block.";
+  $("#du-me").className="f me";$("#du-foe").className="f foe";
+  duUI();DU.regen=setInterval(()=>{DU.p.mp=Math.min(100,DU.p.mp+1.5);duUI()},250);duAI();
+}
+function duStop(){clearInterval(DU.regen);clearTimeout(DU.ai);clearTimeout(DU.ai2);DU.over=true;const w=$("#du-stage .warn");if(w)w.remove()}
+function duUI(){$("#du-php").style.width=Math.max(0,DU.p.hp/DU.p.max*100)+"%";$("#du-ehp").style.width=Math.max(0,DU.e.hp/DU.e.max*100)+"%";
+  $("#du-pmp").style.width=DU.p.mp+"%";$("#du-spell").disabled=DU.p.mp<40;$("#du-block").disabled=DU.blockCd}
+function duDamage(to,d,cls){const t=to==="e"?DU.e:DU.p,el=$(to==="e"?"#du-foe":"#du-me");t.hp-=d;fx(el,cls==="crit"?"magicfx":"hitfx");floatOn(el,$("#du"),Math.round(d),cls);duUI();
+  if(DU.e.hp<=0){duStop();overlay("#du-over",true,"Victory",`${W[DU.e.id].n} is beaten. Round ${DU.round+1} is tougher.`);DU.round++;DU.foe=null}
+  else if(DU.p.hp<=0){duStop();DU.round=1;overlay("#du-over",false,"Knocked out","Block when the rival flashes red, then hit back")}}
+function duAI(){if(DU.over)return;DU.ai=setTimeout(()=>{if(DU.over)return;
+  const f=$("#du-foe");f.classList.add("windup");const w=document.createElement("div");w.className="warn";w.textContent="!";$("#du-stage").appendChild(w);
+  DU.ai2=setTimeout(()=>{w.remove();f.classList.remove("windup");if(DU.over)return;fx(f,"lunge");setTimeout(()=>f.classList.remove("lunge"),180);
+    if(DU.block){duDamage("p",DU.e.atk*.15,"dmg");floatOn($("#du-me"),$("#du"),"Blocked","info");DU.p.mp=Math.min(100,DU.p.mp+15)}
+    else duDamage("p",DU.e.atk*rnd(.9,1.2),"dmg");duAI()},Math.max(420,700-DU.round*40))},rnd(1100,2100)-DU.round*60)}
+$("#du-strike").onclick=()=>{if(DU.over||DU.strikeCd)return;DU.strikeCd=true;setTimeout(()=>DU.strikeCd=false,380);
+  const m=$("#du-me");fx(m,"lunge");setTimeout(()=>m.classList.remove("lunge"),160);DU.p.mp=Math.min(100,DU.p.mp+6);duDamage("e",DU.p.atk*rnd(.5,.7),"dmg")};
+$("#du-block").onclick=()=>{if(DU.over||DU.blockCd)return;DU.block=true;DU.blockCd=true;$("#du-me").classList.add("guard");duUI();
+  setTimeout(()=>{DU.block=false;$("#du-me").classList.remove("guard")},800);setTimeout(()=>{DU.blockCd=false;duUI()},1100)};
+$("#du-spell").onclick=()=>{if(DU.over||DU.p.mp<40)return;DU.p.mp-=40;fx($("#du-me"),"magicfx");floatOn($("#du-me"),$("#du"),W[DU.p.id].sp,"info");
+  setTimeout(()=>duDamage("e",DU.p.atk*2.4,"crit"),250)};
+
+/* ---------- TACTICS ---------- */
+const TX={COLS:5,ROWS:7,rocks:["1,3","3,3","2,1"]};
+const dist=(a,b)=>Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
+function txStart(){
+  clearTimeout(TX.t);$("#tx-over").hidden=true;TX.turn=1;TX.busy=false;TX.sel=null;
+  const mk=(id,side,x,y)=>{const w=W[id];const u={id,side,x,y,max:Math.round(w.hp/3),atk:w.atk,mv:w.spd>=4?3:w.spd>=2?2:1,rng:w.rng,acted:false,alive:true};u.hp=u.max;return u};
+  const f=foes(3);TX.units=[...squad.map((id,i)=>mk(id,"p",i*2,6)),...f.map((id,i)=>mk(id,"e",i*2,0))];
+  txHint("Tap one of your warriors (green ring).");txDraw();
+}
+const at=(x,y)=>TX.units.find(u=>u.alive&&u.x===x&&u.y===y);
+const blocked=(x,y)=>x<0||y<0||x>=TX.COLS||y>=TX.ROWS||TX.rocks.includes(x+","+y);
+function reach(u){const seen=new Map([[u.x+","+u.y,0]]),q=[[u.x,u.y,0]],out=[];
+  while(q.length){const [x,y,d]=q.shift();if(d===u.mv)continue;for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy,k=nx+","+ny;
+    if(blocked(nx,ny)||seen.has(k))continue;const o=at(nx,ny);if(o&&o.side!==u.side)continue;seen.set(k,d+1);q.push([nx,ny,d+1]);if(!o)out.push({x:nx,y:ny})}}return out}
+const targets=u=>TX.units.filter(o=>o.alive&&o.side!==u.side&&dist(o,u)<=u.rng);
+function txHint(t){$("#tx-hint").textContent=t}
+function txDraw(){
+  const b=$("#tx-board");b.innerHTML="";const s=TX.sel;const mv=s&&!s.moved?reach(s):[];const tg=s?targets(s):[];
+  for(let y=0;y<TX.ROWS;y++)for(let x=0;x<TX.COLS;x++){const c=document.createElement("button");c.className="cell";const k=x+","+y;
+    if(TX.rocks.includes(k))c.classList.add("rock");if(mv.some(m=>m.x===x&&m.y===y))c.classList.add("move");
+    const u=at(x,y);if(u&&tg.includes(u))c.classList.add("target");
+    c.setAttribute("aria-label",u?`${W[u.id].n} ${u.side==="p"?"(yours)":"(rival)"}`:TX.rocks.includes(k)?"rock":"empty tile");
+    if(u){const t=document.createElement("div");t.className="tok"+(u.side==="e"?" e":"")+(u===s?" sel":"")+(u.acted?" done":"");t.style.cssText=faceBg(u.id);
+      t.innerHTML=`<div class="bar ${u.side==="e"?"foe":""}"><i style="width:${u.hp/u.max*100}%"></i></div>`;c.appendChild(t);u.cell=c}
+    c.onclick=()=>txTap(x,y);b.appendChild(c)}
+  $("#tx-turn").textContent="Turn "+TX.turn;
+}
+function txTap(x,y){
+  if(TX.busy)return;const u=at(x,y),s=TX.sel;
+  if(u&&u.side==="p"&&!u.acted){if(s===u&&u.moved){u.acted=true;TX.sel=null;txHint("Warrior waits.");txDraw();txAuto();return}
+    TX.sel=u;u.moved=u.moved||false;txHint(`${W[u.id].n}: blue = move, red = attack. Tap again to wait.`);txDraw();return}
+  if(s&&!s.moved&&!u&&reach(s).some(m=>m.x===x&&m.y===y)){s.x=x;s.y=y;s.moved=true;
+    if(!targets(s).length){s.acted=true;TX.sel=null;txHint("Moved. Nobody in reach.");txDraw();txAuto();return}
+    txHint("Tap a red rival to attack, or tap your warrior to wait.");txDraw();return}
+  if(s&&u&&u.side==="e"&&targets(s).includes(u)){txAttack(s,u);s.acted=true;TX.sel=null;txDraw();txCheck();txAuto();return}
+  TX.sel=null;txHint("Tap one of your warriors (green ring).");txDraw();
+}
+function txAttack(a,t){const d=Math.round(a.atk*rnd(.9,1.2));t.hp-=d;if(t.hp<=0){t.alive=false}txDraw();
+  const c=t.cell||$("#tx-board");if(t.alive&&t.cell)fx(t.cell.querySelector(".tok"),"hitfx");floatOn(c,$("#tx"),d,"dmg")}
+function txAuto(){if(TX.units.filter(u=>u.side==="p"&&u.alive).every(u=>u.acted))setTimeout(txEnemy,450)}
+function txCheck(){const pe=TX.units.filter(u=>u.side==="e"&&u.alive).length,pp=TX.units.filter(u=>u.side==="p"&&u.alive).length;
+  if(!pe){overlay("#tx-over",true,"Victory",`Won in ${TX.turn} turns`);TX.busy=true;return true}
+  if(!pp){overlay("#tx-over",false,"Defeated","Use spears to strike from 2 tiles away");TX.busy=true;return true}return false}
+function txEnemy(){
+  if(TX.busy)return;TX.busy=true;TX.sel=null;txHint("Rivals are moving…");
+  const es=TX.units.filter(u=>u.side==="e"&&u.alive);let i=0;
+  const step=()=>{if(i>=es.length){TX.turn++;TX.units.forEach(u=>{u.acted=false;u.moved=false});TX.busy=false;txHint("Your turn. Tap a warrior.");txDraw();return}
+    const e=es[i++];if(!e.alive)return step();
+    let tg=targets(e);if(!tg.length){const ps=TX.units.filter(u=>u.side==="p"&&u.alive);
+      const opts=[{x:e.x,y:e.y},...reach(e)];let best=opts[0],bd=1e9;opts.forEach(o=>{const d=Math.min(...ps.map(p=>dist(o,p)));if(d<bd){bd=d;best=o}});e.x=best.x;e.y=best.y;tg=targets(e);txDraw()}
+    setTimeout(()=>{if(tg.length){txAttack(e,tg.sort((a,b)=>a.hp-b.hp)[0])}if(txCheck())return;setTimeout(step,350)},300)};
+  step();
+}
+$("#tx-end").onclick=()=>{if(!TX.busy)txEnemy()};
+
+/* ---------- CARDS ---------- */
+const CB={};
+const wcard=id=>{const w=W[id],a=Math.round(w.atk/4),h=Math.round(w.hp/28);return{t:"w",id,a,h,cost:Math.max(1,Math.round((a+h)/2.2)-1)}};
+function deck(ids){return shuffle([...ids.map(wcard),...ids.map(wcard),{t:"potion",cost:1},{t:"potion",cost:1},{t:"bolt",cost:2},{t:"bolt",cost:2}])}
+function cbStart(){
+  $("#cb-over").hidden=true;
+  const mine=[...squad,...shuffle(IDS.filter(i=>!squad.includes(i))).slice(0,3)],theirs=foes(5);
+  CB.me={hp:20,max:20,mana:2,maxMana:2,hand:[],deck:deck(mine),lanes:[null,null,null],face:squad[0]};
+  CB.ai={hp:20,max:20,mana:2,maxMana:2,hand:[],deck:deck(theirs),lanes:[null,null,null],face:theirs[0]};
+  for(let i=0;i<4;i++){draw(CB.me);draw(CB.ai)}CB.busy=false;cbDraw();
+}
+function draw(p){if(p.deck.length&&p.hand.length<5)p.hand.push(p.deck.pop())}
+function cardHTML(c){
+  if(c.t==="w")return`<span class="cost">${c.cost}</span><div class="art"><img alt="" src="${img(c.id)}"></div><div class="nm">${W[c.id].n}</div><div class="tx">${W[c.id].r}</div><span class="stat a">${c.a}</span><span class="stat h">${c.h}</span>`;
+  if(c.t==="potion")return`<span class="cost">1</span><div class="art potion"></div><div class="nm">Health Potion</div><div class="tx">Heal your chief 4 and each warrior 1</div>`;
+  return`<span class="cost">2</span><div class="art bolt"></div><div class="nm">Arcane Bolt</div><div class="tx">Deal 3 to the strongest rival</div>`}
+function cbDraw(){
+  const lanes=(p,el,side)=>{const L=$(el);L.innerHTML="";p.lanes.forEach(u=>{const d=document.createElement("div");d.className="lane "+side;
+    if(u)d.innerHTML=`<div class="mini"><img alt="${W[u.id].n}" src="${img(u.id)}" class="${side==="m"?"flip":""}"></div><span class="stat a">${u.a}</span><span class="stat h">${u.h}</span>`;L.appendChild(d)})};
+  lanes(CB.ai,"#cb-elanes","e");lanes(CB.me,"#cb-mlanes","m");
+  $("#cb-eface").style.cssText=faceBg(CB.ai.face);$("#cb-mface").style.cssText=faceBg(CB.me.face);
+  $("#cb-ehp").textContent=Math.max(0,CB.ai.hp);$("#cb-mhp").textContent=Math.max(0,CB.me.hp);
+  $("#cb-ehpb").style.width=Math.max(0,CB.ai.hp/20*100)+"%";$("#cb-mhpb").style.width=Math.max(0,CB.me.hp/20*100)+"%";
+  $("#cb-mana").innerHTML=Array.from({length:CB.me.maxMana},(_,i)=>`<i class="gem ${i<CB.me.mana?"on":""}"></i>`).join("")+`<span style="margin-left:8px;font-weight:800;font-size:13px">${CB.me.mana} mana</span>`;
+  const h=$("#cb-hand");h.innerHTML="";CB.me.hand.forEach((c,i)=>{const b=document.createElement("button");b.className="card"+(c.cost>CB.me.mana?" cant":"");b.innerHTML=cardHTML(c);
+    b.setAttribute("aria-label",c.t==="w"?`${W[c.id].n}, cost ${c.cost}`:c.t==="potion"?"Health Potion":"Arcane Bolt");b.onclick=()=>cbPlay(CB.me,CB.ai,i,true);h.appendChild(b)});
+}
+function cbPlay(p,o,i,human){
+  if(CB.busy&&human)return false;const c=p.hand[i];if(!c||c.cost>p.mana)return false;
+  if(c.t==="w"){const l=p.lanes.indexOf(null);if(l<0){if(human)$("#cb-mana").insertAdjacentHTML("beforeend","<span style='margin-left:8px;color:var(--blood);font-size:12px'>Lanes full</span>");return false}p.lanes[l]={id:c.id,a:c.a,h:c.h}}
+  else if(c.t==="potion"){p.hp=Math.min(p.max,p.hp+4);p.lanes.forEach(u=>u&&(u.h+=1))}
+  else{const t=o.lanes.filter(Boolean).sort((a,b)=>b.a-a.a)[0];if(t){t.h-=3;if(t.h<=0)o.lanes[o.lanes.indexOf(t)]=null}else o.hp-=3}
+  p.mana-=c.cost;p.hand.splice(i,1);cbDraw();cbEnd();return true}
+function cbAttack(p,o,side){p.lanes.forEach((u,i)=>{if(!u)return;const t=o.lanes[i];if(t){t.h-=u.a;if(t.h<=0)o.lanes[i]=null}else o.hp-=u.a});cbDraw()}
+function cbEnd(){if(CB.ai.hp<=0){overlay("#cb-over",true,"Victory","Rival chief defeated · free card pack (ad)");CB.busy=true;return true}
+  if(CB.me.hp<=0){overlay("#cb-over",false,"Defeated","Fill empty lanes. An open lane lets attacks through to your chief");CB.busy=true;return true}return false}
+$("#cb-end").onclick=()=>{if(CB.busy)return;CB.busy=true;cbAttack(CB.me,CB.ai);if(cbEnd())return;
+  setTimeout(()=>{const ai=CB.ai;ai.maxMana=Math.min(6,ai.maxMana+1);ai.mana=ai.maxMana;draw(ai);
+    let played=true;while(played){played=false;const order=ai.hand.map((c,i)=>i).sort((a,b)=>ai.hand[b].cost-ai.hand[a].cost);for(const i of order){if(cbPlay(ai,CB.me,i,false)){played=true;break}}}
+    if(CB.me.hp<=0||CB.ai.hp<=0)return;
+    setTimeout(()=>{cbAttack(CB.ai,CB.me);if(cbEnd())return;const m=CB.me;m.maxMana=Math.min(6,m.maxMana+1);m.mana=m.maxMana;draw(m);CB.busy=false;cbDraw()},600)},500)};
+
+/* ---------- tabs ---------- */
+const START={tb:tbStart,du:()=>duStart(false),tx:txStart,cb:cbStart};
+const STOP={tb:()=>clearInterval(TB.timer),du:duStop,tx:()=>{},cb:()=>{}};
+let current="tb";
+function restart(m){Object.values(STOP).forEach(f=>f());START[m]()}
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{current=t.dataset.tab;
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===t));
+  document.querySelectorAll(".mode").forEach(s=>s.hidden=s.dataset.mode!==current);restart(current)});
+document.querySelectorAll("[data-restart]").forEach(b=>b.onclick=()=>{const m=b.dataset.restart;if(m==="du"){Object.values(STOP).forEach(f=>f());duStart(true)}else restart(m)});
+renderRoster();restart("tb");
+</script>
