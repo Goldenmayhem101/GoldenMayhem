@@ -1,0 +1,86 @@
+BREACH RUN – GOOGLE PLAY STORE LISTING
+(Copy each part into Play Console > Grow users > Store presence > Main store listing)
+
+──────────────────────────────
+APP NAME  (max 30 characters)
+──────────────────────────────
+Breach Run: Zombie Extraction
+
+──────────────────────────────
+SHORT DESCRIPTION  (max 80 characters)
+──────────────────────────────
+Loot the building, rescue survivors and hold the roof until the chopper lands!
+
+──────────────────────────────
+FULL DESCRIPTION  (max 4000 characters)
+──────────────────────────────
+The building is overrun. Your only way out is up.
+
+Breach Run is a zombie survival shooter you play with one thumb. Fight your way through a cut-away building room by room, search every locker and desk for loot, rescue trapped survivors, and climb to the roof. Then hold out against the horde until the rescue chopper arrives.
+
+HOW TO PLAY
+• Drag anywhere to move. Your soldier aims and shoots on his own
+• Stand still at furniture to search it for cash and valuables
+• Close doors to stop zombies in their tracks, until they break through
+• Climb ladders to reach the next floor
+• Reach the roof and survive the countdown. Then the airstrike hits and you're out
+
+FEATURES
+• Dark, unexplored rooms that light up as you walk in. You never know what's inside
+• Walkers, fast runners and huge brutes that smash through doors
+• Zombie waves on a countdown: get ready or get swarmed
+• Spend cash to unlock the next floor, and find keys for locked doors
+• Stand by a damaged door to repair it before it breaks
+• Find upgrade cards in rooms: extra bullets, rapid fire, piercing and explosive rounds, and more
+• Rescue survivors who meet you at the extraction point and fight beside you
+• Fill your backpack with dog tags, gold watches, data drives and rare gems
+• 5 locations (Dorm Block, City Clinic, Office Tower, Shopping Mall, Research Lab) with taller, tougher buildings each chapter
+• Earn up to 3 stars per chapter and replay to beat your best haul
+• Daily Challenge: a brand-new, extra-tough building every day. Keep your streak going
+• Free gifts and supply chests
+• Unlock outfits, gun skins and bullet tracers, and pick boosts before a run
+• Permanent upgrades: armor, firepower, sprint, scavenger, bigger backpack and drum mag
+• Plays offline. No purchases needed. Everything is earned by playing
+
+How long can you survive? Breach in, grab the loot, and run.
+
+──────────────────────────────
+APP CATEGORY / TAGS
+──────────────────────────────
+App or game: Game
+Category: Action
+Tags (pick up to 5): Action, Shooter, Zombie, Survival, Offline
+
+──────────────────────────────
+GRAPHICS TO UPLOAD
+──────────────────────────────
+App icon (512×512 PNG):           icon-512.png
+Feature graphic (1024×500 PNG):   feature-graphic-1024x500.png
+Phone screenshots (2–8 needed):   take these on your phone while playing (Power + Volume Down),
+  or send them to me and I'll turn them into store-sized images with captions.
+  Good shots: the intro icon, searching a bunk bed, a fight in a room, the level-up cards,
+  the red rooftop countdown, the Challenge Completed backpack screen, the Shop.
+
+──────────────────────────────
+APP CONTENT ANSWERS (Play Console > Policy > App content)
+──────────────────────────────
+Privacy policy:      the Breach Run privacy policy page (make it public first: Share > anyone with the link)
+Ads:                 Yes, my app contains ads
+App access:          All functionality is available without special access
+Content rating:      Fill in the questionnaire. Action game with cartoon/fantasy violence against
+                     zombies (no realistic gore, no blood on humans), no user chat, no gambling,
+                     no real-money purchases. Expect about Teen / PEGI 12.
+Target audience:     13+ (choose 13–15, 16–17 and 18+). Not designed for children.
+In-app purchases:    No
+Financial features:  None
+Health features:     None
+Advertising ID:      Yes, the app uses the advertising ID (for ads)
+Data safety (because AdMob is used):
+  • Does your app collect or share user data?  Yes
+  • Data types: Device or other IDs (advertising ID); App info and performance
+    (crash logs, diagnostics); App activity (app interactions)
+  • Purpose: Advertising or marketing; Analytics; Fraud prevention, security and compliance
+  • Shared with third parties: Yes (Google AdMob)
+  • Encrypted in transit: Yes
+  • Users can request deletion: No account is created; game progress stays on the phone
+  Google's guide for AdMob answers: https://developers.google.com/admob/android/privacy/play-data-disclosure

@@ -1,0 +1,27 @@
+; Animal Warriors - first playable test (Goldenmayhem)
+config_version=5
+
+[application]
+config/name="Animal Warriors"
+config/description="First playable test: platform fighter"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[autoload]
+Sfx="*res://scripts/Sfx.gd"
+
+[display]
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=0
+
+[input_devices]
+pointing/emulate_touch_from_mouse=true
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/canvas_textures/default_texture_filter=1
+environment/defaults/default_clear_color=Color(0.08, 0.06, 0.05, 1)

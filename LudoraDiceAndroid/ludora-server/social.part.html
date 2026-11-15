@@ -1,0 +1,255 @@
+<style>
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;background:#9a9a9a;flex:none}
+.dot.on{background:#2fd34e;box-shadow:0 0 6px #2fd34e}
+.frow{display:flex;align-items:center;gap:8px;background:#fff6e0;border:2px solid #e7d3a5;border-radius:14px;padding:7px 10px;font-weight:800;margin-top:6px}
+.frow span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini{flex:none;border:2px solid #1c7a2b;border-radius:11px;padding:5px 11px;font-weight:800;font-size:14px;cursor:pointer;color:#fff;background:linear-gradient(#6af076,#27ad3b)}
+.mini.no{border-color:#8a2020;background:linear-gradient(#ff8d8d,#d33)}
+.mini.gr{border-color:var(--tan-line);background:linear-gradient(#f2dcae,#dcc088);color:var(--cream-ink)}
+.mini:disabled{opacity:.45}
+.mycode{font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:.14em;color:#d3501a;text-align:center}
+.addrow{display:flex;gap:8px;margin-top:6px}.addrow .field{flex:1;text-transform:uppercase;letter-spacing:.2em;text-align:center;padding:8px}
+.invite{position:fixed;left:12px;right:12px;top:max(10px,env(safe-area-inset-top,0px));z-index:70;max-width:420px;margin:0 auto;display:flex;align-items:center;gap:10px;background:var(--cream);color:var(--cream-ink);border:3px solid #fff3d6;border-radius:18px;padding:10px 12px;font-weight:800;box-shadow:0 0 0 3px #9a6a2a,0 10px 24px rgba(0,0,0,.5)}
+.invite span{flex:1}
+.toastx{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom,0px));translate:-50% 0;z-index:80;background:#120d46;color:#fff;border:2px solid #37b9ff;border-radius:999px;padding:9px 18px;font-weight:800;max-width:90vw;text-align:center}
+#g-btn{display:flex;justify-content:center;min-height:44px}
+.btn.fb{background:linear-gradient(#4f8cff,#1c5fd6);border-color:#12439a;text-shadow:0 2px 0 rgba(0,20,90,.55);box-shadow:0 5px 0 #0f3b8c,inset 0 2px 0 rgba(255,255,255,.4)}
+.sub{margin:10px 0 2px;text-align:center;font-weight:800;color:var(--cream-mut)}
+</style>
+<div class="overlay" id="ov-auth" role="dialog" aria-modal="true" aria-labelledby="a-title" hidden>
+  <div class="sheet">
+    <h2 class="ribbon" id="a-title">SIGN IN</h2>
+    <button class="close" type="button" id="a-x" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <div class="sb">
+      <p class="lead" style="text-align:center">Sign in to play with friends and find players online.</p>
+      <div class="stack">
+        <div id="g-btn" hidden></div>
+        <button type="button" class="btn fb" id="a-fb" hidden>Continue with Facebook</button>
+        <p class="sub">or play as a guest</p>
+        <input class="field" id="a-name" type="text" maxlength="12" placeholder="Your name" aria-label="Your name">
+        <button type="button" class="btn ghost" id="a-guest">Play as guest</button>
+        <p class="note" id="a-note" style="text-align:center"></p>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="ov-hub" role="dialog" aria-modal="true" aria-labelledby="hub-title" hidden>
+  <div class="sheet">
+    <h2 class="ribbon" id="hub-title">PLAY ONLINE</h2>
+    <button class="close" type="button" id="hub-x" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <div class="sb">
+      <p class="lead" id="hub-hi" style="text-align:center"></p>
+      <h3>Quick match</h3>
+      <div class="chips" id="hub-count">
+        <button type="button" class="chip" data-v="2" aria-pressed="false">2</button>
+        <button type="button" class="chip" data-v="3" aria-pressed="false">3</button>
+        <button type="button" class="chip" data-v="4" aria-pressed="true">4</button>
+      </div>
+      <div class="stack" style="margin-top:10px">
+        <button type="button" class="btn" id="hub-find">Find players</button>
+        <button type="button" class="btn ghost" id="hub-room">Private room with a code</button>
+      </div>
+      <h3>Friends</h3>
+      <div id="hub-reqs"></div>
+      <div id="hub-friends"></div>
+      <p class="note" id="hub-nofr">No friends yet. Share your friend code or add a friend's code below.</p>
+      <h3>Add a friend</h3>
+      <div class="addrow"><input class="field" id="hub-code" maxlength="6" autocomplete="off" placeholder="CODE" aria-label="Friend code"><button type="button" class="mini" id="hub-add">Add</button></div>
+      <h3>Your friend code</h3>
+      <div class="mycode" id="hub-mine">------</div>
+      <div class="stack" style="margin-top:8px"><button type="button" class="btn ghost" id="hub-copy">Copy my code</button></div>
+    </div>
+  </div>
+</div>
+<script>
+/* Ludora online client: connects to the server in this folder, then plugs into the game as its "room" provider. */
+(function(){
+'use strict';
+var CFG=null,ws=null,ME=null,PEER=null,WAITERS=[],FRIENDS=[],REQS=[],AUTHED=null,SESS={};
+var rooms={};
+function $(s){return document.querySelector(s);}
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function toast(t){var d=document.createElement('div');d.className='toastx';d.textContent=t;document.body.appendChild(d);setTimeout(function(){d.remove();},2800);}
+function send(o){if(ws&&ws.readyState===1)ws.send(JSON.stringify(o));}
+function connect(){
+  return new Promise(function(res,rej){
+    var SRV=window.LUDORA_SERVER||'';
+    var p=SRV?SRV.replace(/^http/,'ws').replace(/\/$/,'')+'/ws':(location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws';
+    var s=new WebSocket(p);ws=s;
+    s.onopen=function(){res();};
+    s.onerror=function(){rej(new Error('offline'));};
+    s.onmessage=function(e){var m;try{m=JSON.parse(e.data);}catch(x){return;}onMsg(m);};
+    s.onclose=function(){if(AUTHED){AUTHED=null;ME=null;toast('Connection lost. Reload to reconnect.');}};
+  });
+}
+function auth(payload){
+  return new Promise(function(res,rej){
+    var to=setTimeout(function(){rej(new Error('Sign-in timed out'));},12000);
+    WAITERS.push({ok:function(m){clearTimeout(to);res(m);},fail:function(t){clearTimeout(to);rej(new Error(t));}});
+    send(Object.assign({t:'auth'},payload));
+  });
+}
+function onMsg(m){
+  if(m.t==='me'){
+    ME=m.me;FRIENDS=m.friends||[];REQS=m.incoming||[];
+    if(m.peer)PEER=m.peer;
+    if(m.secret){SESS.secret=m.secret;lsSet('ludora.sess',{kind:'guest',secret:m.secret});}
+    if(!AUTHED){AUTHED=m.me;var w=WAITERS.splice(0);w.forEach(function(x){x.ok(m);});}
+    renderHub();
+  }else if(m.t==='authfail'){WAITERS.splice(0).forEach(function(x){x.fail(m.text);});}
+  else if(m.t==='toast')toast(m.text);
+  else if(m.t==='invited')showInvite(m);
+  else if(m.t==='mm.wait'){$('#hub-find').textContent='Searching… tap to cancel';MM=true;}
+  else if(m.t==='mm.cancelled'){MM=false;$('#hub-find').textContent='Find players';}
+  else if(m.t==='mm.found')matchFound(m);
+  else if(m.t==='r.peers'){var r=rooms[m.room];if(r)r.peersChanged(m);}
+  else if(m.t==='r.ev'){var r2=rooms[m.room];if(r2)r2.fire(m.topic,{peer:m.peer,by:null,isMe:false,sameTab:false,kind:'viewer',guest:false,topic:m.topic,data:m.data});}
+}
+/* ----- room provider (same shape as the artifact "room" capability) ----- */
+function mkRoom(name){
+  var st={h:{},ph:[],peers:[]};
+  var o={name:name,
+    emit:function(t,d){send({t:'r.emit',room:name,topic:t,data:d});return Promise.resolve();},
+    on:function(t,h){(st.h[t]=st.h[t]||[]).push(h);return function(){st.h[t]=(st.h[t]||[]).filter(function(x){return x!==h;});};},
+    presence:function(p){send({t:'r.pres',room:name,presence:p});return Promise.resolve();},
+    peers:function(){return st.peers;},
+    onPeers:function(h){st.ph.push(h);return function(){st.ph=st.ph.filter(function(x){return x!==h;});};},
+    connected:function(){return !!(ws&&ws.readyState===1);},onConnection:function(h){h(true);return function(){};},
+    leave:function(){send({t:'r.leave',room:name});delete rooms[name];return Promise.resolve();},
+    fire:function(t,m){(st.h[t]||[]).slice().forEach(function(h){try{h(m);}catch(e){}});},
+    peersChanged:function(m){st.peers=m.peers;var ch={peers:m.peers,joined:m.joined||[],left:m.left||[],updated:[]};st.ph.slice().forEach(function(h){try{h(ch);}catch(e){}});}
+  };
+  return o;
+}
+var provider={join:function(name){var r=mkRoom(name);rooms[name]=r;send({t:'r.join',room:name});return Promise.resolve(r);}};
+var readyP=null;
+function ensureProvider(){
+  if(readyP)return readyP;
+  readyP=fetch((window.LUDORA_SERVER||'').replace(/\/$/,'')+'/config.json').then(function(r){return r.json();}).then(function(c){CFG=c;if(window.AndroidApp){CFG.google='';CFG.facebook='';}return connect();}).then(function(){
+    var s=lsGet('ludora.sess');
+    if(s&&s.kind==='guest'&&s.secret)return auth({kind:'guest',secret:s.secret}).catch(function(){});
+  }).then(function(){return provider;},function(){readyP=null;return null;});
+  return readyP;
+}
+/* Hand the game a provider as soon as the server answers; it signs in lazily when the player opens Online. */
+window.claude=window.claude||{};
+window.claude.use=function(n){
+  if(n!=='room')return Promise.resolve(null);
+  return ensureProvider().then(function(p){return p?{join:function(name){
+    if(AUTHED)return p.join(name);
+    return Promise.reject(new Error('Not signed in'));}}:null;});
+};
+/* ----- sign-in UI ----- */
+function loadScript(src){return new Promise(function(res,rej){var s=document.createElement('script');s.src=src;s.async=true;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+var gDone=false,fbDone=false;
+function setupProviders(){
+  var note=$('#a-note');
+  if(CFG&&CFG.google&&!gDone){gDone=true;
+    loadScript('https://accounts.google.com/gsi/client').then(function(){
+      google.accounts.id.initialize({client_id:CFG.google,callback:function(r){doAuth({kind:'google',token:r.credential});}});
+      google.accounts.id.renderButton($('#g-btn'),{theme:'filled_blue',size:'large',text:'continue_with',shape:'pill',width:260});
+      $('#g-btn').hidden=false;
+    }).catch(function(){});}
+  if(CFG&&CFG.facebook&&!fbDone){fbDone=true;
+    loadScript('https://connect.facebook.net/en_US/sdk.js').then(function(){
+      FB.init({appId:CFG.facebook,cookie:false,xfbml:false,version:'v19.0'});$('#a-fb').hidden=false;
+    }).catch(function(){});}
+  if(!(CFG&&(CFG.google||CFG.facebook)))note.textContent='Google and Facebook sign-in are not set up on this server yet. Guest play works now.';
+}
+function doAuth(p){
+  $('#a-note').textContent='Signing in…';
+  return ensureProvider().then(function(pr){if(!pr)throw new Error('Cannot reach the server');return auth(p);}).then(function(){
+    $('#ov-auth').hidden=true;openHub();
+  }).catch(function(e){$('#a-note').textContent=e.message||'Sign-in failed';});
+}
+$('#a-guest').addEventListener('click',function(){
+  var n=($('#a-name').value||'').trim()||'Player';
+  var s=lsGet('ludora.sess');doAuth({kind:'guest',name:n,secret:s&&s.secret});
+});
+$('#a-fb').addEventListener('click',function(){
+  FB.login(function(r){if(r&&r.authResponse)doAuth({kind:'facebook',token:r.authResponse.accessToken});else $('#a-note').textContent='Facebook sign-in was cancelled.';},{scope:'public_profile'});
+});
+$('#a-x').addEventListener('click',function(){$('#ov-auth').hidden=true;});
+/* ----- hub ----- */
+var MM=false,mmCount=4;
+function openHub(){
+  if(!AUTHED){$('#ov-auth').hidden=false;ensureProvider().then(setupProviders);$('#a-name').value=(window.LudoraHooks&&window.LudoraHooks.set.name)||'';return;}
+  $('#ov-hub').hidden=false;renderHub();
+}
+function renderHub(){
+  if(!ME)return;
+  $('#hub-hi').textContent='Hi '+ME.name+'!';
+  $('#hub-mine').textContent=ME.code;
+  var fr=$('#hub-friends');fr.innerHTML='';
+  FRIENDS.slice().sort(function(a,b){return (b.online?1:0)-(a.online?1:0);}).forEach(function(f){
+    var row=document.createElement('div');row.className='frow';
+    row.innerHTML='<i class="dot'+(f.online?' on':'')+'"></i><span></span>';
+    row.querySelector('span').textContent=f.name;
+    var inv=document.createElement('button');inv.type='button';inv.className='mini';inv.textContent='Invite';inv.disabled=!f.online;
+    inv.addEventListener('click',function(){inviteFriend(f);});row.appendChild(inv);
+    var rm=document.createElement('button');rm.type='button';rm.className='mini gr';rm.textContent='✕';rm.setAttribute('aria-label','Remove '+f.name);
+    rm.addEventListener('click',function(){if(confirm('Remove '+f.name+' from your friends?'))send({t:'friend.remove',id:f.id});});row.appendChild(rm);
+    fr.appendChild(row);
+  });
+  $('#hub-nofr').hidden=FRIENDS.length>0||REQS.length>0;
+  var rq=$('#hub-reqs');rq.innerHTML='';
+  REQS.forEach(function(f){
+    var row=document.createElement('div');row.className='frow';row.innerHTML='<span></span>';row.querySelector('span').textContent=f.name+' wants to be friends';
+    var ok=document.createElement('button');ok.type='button';ok.className='mini';ok.textContent='Accept';ok.addEventListener('click',function(){send({t:'friend.accept',id:f.id});});
+    var no=document.createElement('button');no.type='button';no.className='mini no';no.textContent='No';no.addEventListener('click',function(){send({t:'friend.decline',id:f.id});});
+    row.appendChild(ok);row.appendChild(no);rq.appendChild(row);
+  });
+}
+$('#hub-x').addEventListener('click',function(){$('#ov-hub').hidden=true;});
+$('#hub-count').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;mmCount=+b.dataset.v;document.querySelectorAll('#hub-count button').forEach(function(x){x.setAttribute('aria-pressed',String(x===b));});});
+$('#hub-find').addEventListener('click',function(){send(MM?{t:'mm.cancel'}:{t:'mm.join',count:mmCount});});
+$('#hub-room').addEventListener('click',function(){$('#ov-hub').hidden=true;var h=window.LudoraHooks;h.netCreate();});
+$('#hub-add').addEventListener('click',function(){var v=$('#hub-code').value.trim();if(v){send({t:'friend.add',code:v});$('#hub-code').value='';}});
+$('#hub-copy').addEventListener('click',function(){try{navigator.clipboard.writeText(ME.code).then(function(){toast('Code copied');});}catch(e){toast('Your code is '+ME.code);}});
+function inviteFriend(f){
+  var h=window.LudoraHooks,N=h.NET;
+  if(N.on&&N.host){send({t:'invite',to:f.id,code:N.code});return;}
+  if(N.on){toast('Only the room host can invite.');return;}
+  $('#ov-hub').hidden=true;
+  h.netCreate().then(function(){var t=setInterval(function(){if(N.on&&N.host&&N.code){clearInterval(t);send({t:'invite',to:f.id,code:N.code});}},150);setTimeout(function(){clearInterval(t);},4000);});
+}
+var invEl=null;
+function showInvite(m){
+  if(invEl)invEl.remove();
+  var d=document.createElement('div');d.className='invite';invEl=d;
+  d.innerHTML='<span></span>';d.querySelector('span').textContent=m.from.name+' invited you to play';
+  var j=document.createElement('button');j.type='button';j.className='mini';j.textContent='Join';
+  var x=document.createElement('button');x.type='button';x.className='mini no';x.textContent='No';
+  j.addEventListener('click',function(){d.remove();invEl=null;joinCode(m.code);});
+  x.addEventListener('click',function(){d.remove();invEl=null;});
+  d.appendChild(j);d.appendChild(x);document.body.appendChild(d);
+  setTimeout(function(){if(invEl===d){d.remove();invEl=null;}},25000);
+}
+function joinCode(code){
+  var h=window.LudoraHooks;
+  if(h.NET.on){toast('Leave your current room first.');return;}
+  ['ov-hub','ov-auth','ov-help','ov-settings','ov-win'].forEach(function(i){$('#'+i).hidden=true;});
+  h.netJoin(code);
+}
+function matchFound(m){
+  MM=false;$('#hub-find').textContent='Find players';$('#ov-hub').hidden=true;
+  var h=window.LudoraHooks,N=h.NET;toast('Players found!');
+  if(!m.host){setTimeout(function(){joinCode(m.code);},1500);return;}
+  h.netCreate(m.code).then(function(){
+    var b=document.querySelector('#l-count button[data-v="'+m.count+'"]');if(b)b.click();
+    var t0=Date.now(),t=setInterval(function(){
+      var n=N.room?N.room.peers().length:0;
+      if(!N.on||!N.host){clearInterval(t);return;}
+      if(n>=m.count||Date.now()-t0>7000){clearInterval(t);var s=document.querySelector('#l-start');if(s&&!$('#ov-lobby').hidden)s.click();}
+    },300);
+  });
+}
+/* take over the Online tile */
+document.addEventListener('click',function(e){
+  var t=e.target.closest&&e.target.closest('#t-online');if(!t)return;
+  e.stopImmediatePropagation();e.preventDefault();openHub();
+},true);
+window.LudoraSocial={openHub:openHub};
+})();
+</script>

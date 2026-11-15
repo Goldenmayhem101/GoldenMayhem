@@ -1,0 +1,217 @@
+LUDORA – GOOGLE PLAY LAUNCH PACK   (Goldenmayhem)
+Copy each part into Play Console. Character limits are already respected.
+
+============================================================
+1. APP DETAILS (Create app)
+============================================================
+App name: Ludora: Fair Play Dice Game   (27/30)
+Package name: com.goldenmayhem.ludoradice
+Default language: English (United States) – en-US
+App or game: Game
+Free or paid: Free
+
+============================================================
+2. MAIN STORE LISTING  (Grow users > Store presence > Store listings)
+============================================================
+APP NAME (27/30)
+Ludora: Fair Play Dice Game
+
+SHORT DESCRIPTION (78/80)
+Roll the dice, race your pawns home and bump rivals! Collect boards and pawns.
+
+FULL DESCRIPTION
+Roll the dice, race all your pawns home and bump your rivals back to the start. Ludora is a bright, friendly dice and board game for 2 to 4 players, with seven ways to play and a huge collection of boards, pawns, dice and frames to unlock.
+
+HOW TO PLAY
+• Roll a 6 to bring a pawn out of home
+• Race around the board and land on a rival to send them back
+• Stars are safe squares
+• Get every pawn into the center first to win
+
+SEVEN GAME MODES
+• Classic: the standard race with four pawns each
+• Blitz: only 2 pawns each for short, fast games
+• Hunter: only start squares are safe, and every bump gives you another roll
+• Safe Haven: four extra safe squares to hide on
+• Speed Turns: only 6 seconds a turn, so be quick
+• Surprise Squares: hidden gold ? squares give you another roll
+• Daily Twist: a different rule every day
+
+PLAY YOUR WAY
+• Play vs the computer, 2 to 4 players
+• Team match: 2 vs 2 with a partner across the board
+• Pass & play with friends on one phone
+
+COLLECT AND CUSTOMIZE
+• 30+ boards: meadows, pharaoh sands, wizard castles, safari, arctic ice, coral reefs, sakura gardens, cyber cities, alien space, dragon realms and a glowing lava board
+• 40+ pawns: critters, robots, dragons, astronauts and more
+• Dice, themed frames and emoji packs to show off your style
+• Preview every board in full before you unlock it
+• Free daily gift, Lucky Roll, chests and a Daily Challenge with a streak
+• Everything is earned by playing
+
+FAIR AND FRIENDLY
+• No in-app purchases
+• No pop-up ads. Rewarded videos are always optional, and only when you tap to watch one
+• Easy to learn, with a first-time guided tutorial
+
+Roll. Race. Get home first!
+
+============================================================
+3. GRAPHICS  (all inside this store folder)
+============================================================
+App icon, 512×512 PNG ............ icon-512.png
+Feature graphic (banner), 1024×500 feature-graphic-1024x500.png
+Phone screenshots, 1080×1920 ...... screenshots/1 … 7 (upload in order)
+7-inch tablet screenshots ......... tablet/1 … 7 (1200×1920)
+10-inch tablet screenshots ........ tablet/1 … 7 (same files are fine)
+Promo video ....................... optional, leave empty for now
+Screenshot captions, in order:
+  1. Roll. Race. Get home first!
+  2. Safari Savanna board
+  3. Neon Cyber City board
+  4. Sakura Garden board
+  5. 30+ boards to collect
+  6. Preview every board in full
+  7. Themed frames and more
+
+============================================================
+4. STORE SETTINGS  (Grow users > Store presence > Store settings)
+============================================================
+Category: Board   (if "Board" is not offered for your app, pick Casual)
+Tags (pick these): Board, Casual, Multiplayer, Offline, Stylized
+Contact email: goldenmayhem.games@gmail.com
+Phone / website: leave empty
+Search keywords (already woven into the description): ludo, dice game, board game, pawn race, multiplayer board game, family game, offline board game, classic board game
+
+============================================================
+5. APP CONTENT  (Policy > App content)
+============================================================
+Privacy policy:
+  https://claude.ai/artifact/RM6P5yFsZenntMRaZwMeT9   (open it first, Share, set to "Anyone with the link")
+
+App access / Sign-in details:
+  All functionality is available without special access (choose "No")
+
+Ads:
+  Yes, my app contains ads
+
+Content rating:
+  Questionnaire: category "All other app types" > Game. Answer NO to: violence, blood, fear, sexuality, nudity, bad language, drugs, alcohol, tobacco, gambling, simulated gambling, sharing location, sharing personal info, digital purchases.
+  User interaction: answer YES only once online play is switched on (players can see each other's names and send emoji reactions). While the app is offline-only, answer NO.
+  Expected result: Everyone / PEGI 3 (Google may add an "Users interact" label once online play is on).
+
+Target audience:
+  Ages 13–15, 16–17 and 18+ (do NOT tick under 13). "Could your app unintentionally appeal to children?": No.
+
+Data safety  (OFFLINE-ONLY launch, no server address in gradle.properties):
+  Collects or shares data: Yes. Encrypted in transit: Yes. Account creation: none. Deletion: users can uninstall / data stays on the phone.
+  Data types (all "Collected" AND "Shared", processed ephemerally: No, required: Yes):
+   • Device or other IDs  → purposes: Advertising or marketing; Fraud prevention, security and compliance
+   • App interactions (App activity) → Advertising or marketing; Analytics
+   • Crash logs + Diagnostics (App info and performance) → Analytics; Fraud prevention, security and compliance
+  Shared with: Google AdMob (third party ad network).
+
+Data safety  (ONLINE play switched on, a server address is set): add these on top of the above
+   • Personal info > Name (display name the player types) → Collected, not shared, App functionality, optional
+   • Personal info > User IDs (guest ID) → Collected, not shared, App functionality, Account management
+   • Messages > Other in-app messages (emoji reactions in rooms) → Collected, shared with other players, App functionality
+   • Deletion: users can request deletion by emailing goldenmayhem.games@gmail.com
+
+Advertising ID:
+  Yes, uses advertising ID → purposes: Advertising or marketing; Analytics
+
+Government apps:
+  No
+
+Financial features:
+  My app doesn't provide any financial features
+
+Health:
+  My app does not have any health features
+
+News app:
+  No
+
+In-app purchases:
+  None (free, ads only)
+
+AI asset declaration (store listing step 2):
+  Label assets as created or edited using AI, then tick all of them
+
+============================================================
+6. CLOSED TEST  (Test and release > Closed testing > Alpha)
+============================================================
+Countries: Add all countries / regions
+Testers: Google Groups →
+   goldenmayhemtesters@googlegroups.com
+   testers-community@googlegroups.com
+   testcircle-testers@googlegroups.com
+Feedback URL or email: goldenmayhem.games@gmail.com
+Release name: 1.0 (1)
+Release notes:
+<en-US>
+First test build of Ludora! Roll. Race. Get home first! Please send feedback and bugs to goldenmayhem.games@gmail.com
+</en-US>
+Tester opt-in link (works once Google approves the test): https://play.google.com/apps/testing/com.goldenmayhem.ludoradice
+
+============================================================
+7. AdMob
+============================================================
+DONE: AdMob app "Ludora Dice" with one Rewarded unit is created and its IDs are already in gradle.properties.
+After the game is live on Google Play: AdMob > Apps > Ludora Dice > Add store.
+
+============================================================
+8. TESTER RECRUITMENT POST  (Reddit r/AndroidClosedTesting, r/TestersCommunity, Discord)
+============================================================
+TESTERS NEEDED, WILL RETURN THE FAVOUR.
+
+Looking for testers for my Android game, Ludora: Fair Play Dice Game.
+
+Roll the dice, race your pawns home and bump your rivals! 7 game modes, 30+ boards to collect, free to play, no in-app purchases, no pop-up ads.
+
+How to join:
+1. Join the testers group: https://groups.google.com/g/goldenmayhemtesters
+2. Become a tester: https://play.google.com/apps/testing/com.goldenmayhem.ludoradice
+3. Download it: https://play.google.com/store/apps/details?id=com.goldenmayhem.ludoradice
+
+Please keep it installed for 14 days and have a play now and then.
+
+I'll test your app back for the full 14 days. Drop your link in the comments. Thanks!
+
+============================================================
+9. APPLY FOR PRODUCTION  (after 12+ testers for 14 days; dashboard > Apply for production)
+============================================================
+How did you recruit users for your closed test?
+  I recruited testers through Google Groups (goldenmayhemtesters, testers-community and testcircle-testers) and Android tester communities on Reddit and Discord, where developers test each other's apps. I also invited friends and family.
+
+How easy was it to recruit testers?  → choose the option that matches (usually 'Neither easy nor difficult')
+
+Describe the engagement you received from testers during your closed test.
+  Testers played the tutorial and several games against the computer in different modes, opened the collection store and board previews, and claimed daily gifts. Several played on multiple days. I checked Android vitals for crashes and ANRs during the test.
+
+Provide a summary of the feedback that you received from testers.
+  [WRITE THE TRUTH from your testers. Example of the kind of answer Google expects: "Testers liked the board designs and the seven game modes. Some wanted clearer dice-roll prompts, and some asked for easier ways to earn coins."]
+
+Who is the intended audience of your app?
+  Casual mobile gamers aged 13 and up who enjoy classic dice and board games, alone or with friends and family.
+
+Describe how your app provides value to users.
+  Ludora is a free dice and board game with seven game modes, team play, pass and play, and a large collection of boards, pawns and dice that are earned by playing. There are no purchases and no pop-up ads.
+
+How many installs do you expect in your first year?  → '0–10K' is a safe honest choice
+
+What changes did you make to your app based on what you learned during the closed test?
+  [WRITE THE TRUTH: list the real fixes you shipped in your updated test build.]
+
+How did you decide your app was ready for production?
+  After 14 days of closed testing with no crashes in Android vitals, positive tester feedback, and all reported issues fixed in an updated test build.
+
+TIP: upload at least one updated build (raise versionCode) during the 14 days so the 'changes you made' answer is true.
+
+============================================================
+10. FIRST PUBLIC RELEASE NOTES ("What's new", max 500)
+============================================================
+<en-US>
+Welcome to Ludora! 7 game modes, 30+ boards to collect, team play, a new Daily Challenge every day and free gifts. Roll. Race. Get home first!
+</en-US>

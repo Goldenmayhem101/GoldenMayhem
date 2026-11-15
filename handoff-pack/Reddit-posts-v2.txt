@@ -1,0 +1,111 @@
+REDDIT / DISCORD TESTER POSTS  (version 2, copy and paste)
+Post one app per community per day. Read each community's rules and use its "testing" flair if it has one.
+Images for each post are in the images set: icon first, then a screenshot (upload both as a gallery, or attach the icon + screenshot).
+If a community does not allow images, just paste the text.
+
+IMPORTANT: the testers group (goldenmayhemtesters) must be the group set on that app's closed test in Play Console, or the join steps won't work.
+
+####################################################################
+1) LINKSCRIBE
+Images: linkscribe-1-icon.png, linkscribe-2-transcript.png
+####################################################################
+TITLE:
+[Testers needed, I test yours back] Linkscribe: paste a YouTube link, get the full transcript (Android)
+
+BODY:
+Hi everyone! I'm closing in on my 12 testers for the 14-day closed test and would love your help. I'll install and test YOUR app back for the full 14 days, just leave your link below.
+
+**Linkscribe: YouTube Transcript**
+Paste a YouTube link and get the whole transcript with timestamps and speaker labels. Copy it, save it as .txt, or share it. No account needed.
+- 2 free transcripts every 2 hours
+- Watch one short video for 1 extra transcript if you need more
+- Light and dark mode
+- Contains ads (a small banner and the optional reward video)
+
+**How to join (takes about a minute):**
+1. Join the testers group (this lets Google add you): https://groups.google.com/g/goldenmayhemtesters
+2. Open the test link and tap "Become a tester": https://play.google.com/apps/testing/com.goldenmayhem.linkscribe
+3. Install it from Play: https://play.google.com/store/apps/details?id=com.goldenmayhem.linkscribe
+
+Please keep it installed for 14 days and try a video or two when you can. If anything looks off, tell me in the comments or message me. Thank you!
+
+####################################################################
+2) LUDORA: FAIR PLAY DICE GAME   (HOLD until this app is uploaded and approved)
+Images: ludora-1-icon.png, ludora-2-board.png
+####################################################################
+TITLE:
+[Testers needed, I test yours back] Ludora: Fair Play Dice Game, a free Ludo-style board game (Android)
+
+BODY:
+Hi everyone! I'm building my first test group for a new dice and board game and would love your help. I'll install and test YOUR app back for the full 14 days, just leave your link below.
+
+**Ludora: Fair Play Dice Game**
+Roll the dice, race your four pawns home, and bump your rivals back to the start.
+- 7 game modes, including team play and pass-and-play
+- 30+ themed boards, pawns and dice to unlock just by playing
+- A new Daily Challenge every day
+- Free, no in-app purchases, no pop-up ads (only an optional reward video)
+
+**How to join (takes about a minute):**
+1. Join the testers group: https://groups.google.com/g/goldenmayhemtesters
+2. Open the test link and tap "Become a tester": https://play.google.com/apps/testing/com.goldenmayhem.ludoradice
+3. Install it from Play: https://play.google.com/store/apps/details?id=com.goldenmayhem.ludoradice
+
+Please keep it installed for 14 days and play a round now and then. Tell me what feels slow, confusing or unfair. Thank you!
+
+####################################################################
+3) TILTRIX: BLOCK PUZZLE TILT
+Images: tiltrix-1-icon.png, tiltrix-2-gameplay.png
+####################################################################
+TITLE:
+[Testers needed, I test yours back] Tiltrix: a block puzzle where you can TILT the board when you're stuck (Android)
+
+BODY:
+Hi everyone! I'm closing in on my 12 testers for the 14-day closed test and would love your help. I'll install and test YOUR app back for the full 14 days, just leave your link below.
+
+**Tiltrix: Block Puzzle Tilt**
+Drop blocks, clear lines, and when you run out of room, tilt the whole board to shake things loose.
+- 30 levels to beat, with 3 stars each
+- A new Daily Challenge with streaks
+- Unlockable block styles, including neon
+- Free, works offline, no in-app purchases
+- Contains ads
+
+**How to join (takes about a minute):**
+1. Join the testers group: https://groups.google.com/g/goldenmayhemtesters
+2. Open the test link and tap "Become a tester": https://play.google.com/apps/testing/com.goldenmayhem.tiltrix
+3. Install it from Play: https://play.google.com/store/apps/details?id=com.goldenmayhem.tiltrix
+
+Please keep it installed for 14 days and play a few rounds when you can. Tell me what feels too fast, too hard or confusing. Thank you!
+
+####################################################################
+4) MOONHOP: SPACE ORBIT JUMP
+Images: moonhop-1-icon.png, moonhop-2-gameplay.png
+####################################################################
+TITLE:
+[Testers needed, I test yours back] Moonhop: one-tap space game, leap your moon from world to world (Android)
+
+BODY:
+Hi everyone! I'm closing in on my 12 testers for the 14-day closed test and would love your help. I'll install and test YOUR app back for the full 14 days, just leave your link below.
+
+**Moonhop: Space Orbit Jump**
+One tap. Endless space. Time your jump from orbit to orbit and see how far you can hop.
+- 30 levels with 3 stars each, plus an endless mode
+- A new Daily Challenge every day
+- Glowing moons to unlock, free gifts and boosters
+- Free, works offline, no in-app purchases
+- Contains ads
+
+**How to join (takes about a minute):**
+1. Join the testers group: https://groups.google.com/g/goldenmayhemtesters
+2. Open the test link and tap "Become a tester": https://play.google.com/apps/testing/com.goldenmayhem.moonhop
+3. Install it from Play: https://play.google.com/store/apps/details?id=com.goldenmayhem.moonhop
+
+Please keep it installed for 14 days and play a few rounds when you can. Tell me what feels off. Thank you!
+
+####################################################################
+QUICK REPLIES
+####################################################################
+When someone says they joined:  "Thank you so much! Send me your app link and I'll install and test it today."
+When you've tested theirs:  "Done! Installed it and played for a few minutes. Let me know if you want specific feedback on anything."
+When someone reports a problem:  "Thanks for letting me know! Which phone and Android version are you on? I'll fix it in the next update."

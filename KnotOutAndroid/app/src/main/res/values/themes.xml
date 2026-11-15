@@ -1,0 +1,17 @@
+<resources>
+    <color name="bg">#0C2A2D</color>
+
+    <!-- Launch screen: the Knot Out icon on the game's teal background (Android's splash screen) -->
+    <style name="Theme.KnotOut.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/bg</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenIconBackgroundColor">#14494B</item>
+        <item name="postSplashScreenTheme">@style/Theme.KnotOut</item>
+    </style>
+
+    <style name="Theme.KnotOut" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+    </style>
+</resources>

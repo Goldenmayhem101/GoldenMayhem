@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Hue Tower: Color Block Stack</title>
+<style>/*FONTS*/</style>
+<style>/*KITCSS*/</style>
+<style>
+/* Layout: full-screen canvas tower; score HUD floats on top; menus come from the Golden Mayhem kit */
+:root{
+  --ink:#f6f3ff; --muted:#b9b2d6; --pop:#ffd166; --good:#6ee7b7; --fever:#ff5fa2;
+  --font-display:"Lilita One","Arial Rounded MT Bold","Trebuchet MS",sans-serif; --font-body:"Nunito",system-ui,-apple-system,sans-serif;
+  --gm-bg:#140f2b; --gm-panel:#1f1745; --gm-panel-2:#161033; --gm-edge:#3d3075; --gm-ink:#f6f3ff; --gm-muted:#b9b2d6;
+  --gm-accent:#ffd166; --gm-accent-ink:#1c1433; --gm-good:#6ee7b7; --gm-coin:#ffd166; --gm-scrim:rgba(14,10,32,.82);
+  --gm-font-display:var(--font-display); --gm-font-body:var(--font-body);
+  color-scheme:dark;
+}
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:#140f2b;color:var(--ink);font-family:var(--font-body);-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;overscroll-behavior:none}
+[hidden]{display:none!important}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hud{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
+#score{font-family:var(--font-display);font-size:clamp(56px,16vw,88px);line-height:1;text-shadow:0 4px 0 rgba(0,0,0,.25);font-variant-numeric:tabular-nums}
+#score.pop{animation:pop .22s ease-out}
+@keyframes pop{40%{transform:scale(1.18)}}
+#next{font:800 12px var(--font-body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+#fever{font:400 15px var(--font-display);letter-spacing:.06em;color:var(--fever);display:flex;align-items:center;gap:8px}
+#fever .meter{width:90px;height:8px;border-radius:8px;background:rgba(255,255,255,.12);overflow:hidden}
+#fever .meter i{display:block;height:100%;background:var(--fever);transition:width .2s}
+#toast{font-family:var(--font-display);font-size:21px;color:var(--pop);letter-spacing:.04em;text-align:center;opacity:0;transform:translateY(6px);transition:opacity .2s,transform .2s;padding:0 16px}
+#toast.show{opacity:1;transform:none}
+#toast.good{color:var(--good)}
+#toast.hot{color:var(--fever)}
+.topbar{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:max(14px,env(safe-area-inset-left,0px));right:max(14px,env(safe-area-inset-right,0px));display:flex;justify-content:space-between;pointer-events:none}
+.coins{display:flex;align-items:center;gap:7px;padding:7px 12px 7px 8px;border-radius:999px;background:rgba(18,14,38,.86);border:1px solid rgba(255,255,255,.14);font:400 18px var(--font-display);font-variant-numeric:tabular-nums;height:fit-content}
+.coins.bump{animation:pop .25s ease-out}
+.coin{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3c4,#ffd166 45%,#c99a2e);box-shadow:inset 0 0 0 2px rgba(0,0,0,.15);flex:none;display:inline-block}
+.pbtn{pointer-events:auto;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.14);background:rgba(18,14,38,.86);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.pbtn svg{width:18px;height:18px}
+.pbtn:focus-visible{outline:3px solid var(--pop);outline-offset:3px}
+#zone{position:fixed;left:0;right:0;top:36%;text-align:center;pointer-events:none;opacity:0;transition:opacity .4s}
+#zone.show{opacity:1}
+#zone small{display:block;font:800 12px var(--font-body);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+#zone b{font:400 34px var(--font-display);font-weight:400}
+/* missions sheet */
+.missions{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;text-align:left}
+.mission{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:11px 12px;border-radius:14px;background:var(--gm-panel-2);box-shadow:inset 0 0 0 2px var(--gm-edge)}
+.mission .t{font-weight:800;font-size:14px;min-width:0}
+.mission .r{display:flex;align-items:center;gap:5px;font:400 15px var(--font-display);font-variant-numeric:tabular-nums;color:var(--pop)}
+.mission .r .coin{width:14px;height:14px}
+.bar{grid-column:1/-1;height:7px;border-radius:9px;background:rgba(255,255,255,.1);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--pop);border-radius:9px}
+.mission.done{box-shadow:inset 0 0 0 2px rgba(110,231,183,.6)}
+.mission.done .bar i{background:var(--good)}
+.mission .p{grid-column:1/-1;font-size:12px;color:var(--muted);font-weight:800;margin-top:-2px;font-variant-numeric:tabular-nums}
+.help{display:flex;flex-direction:column;gap:6px;text-align:left;font-size:13px;color:var(--muted);margin:0;padding:0;list-style:none}
+.help b{color:var(--ink);font-family:var(--font-display);font-weight:400;font-size:14px;letter-spacing:.03em;margin-right:4px}
+.lvlpill{font:800 13px var(--font-body);color:var(--pop);letter-spacing:.06em}
+/* home title */
+.ht-title{font:400 clamp(60px,17vw,86px)/.9 var(--font-display);text-align:center;background:linear-gradient(90deg,#ff7aa2,#ffd166,#6ee7b7,#7cc4ff,#b69cff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 rgba(0,0,0,.35))}
+.ht-tag{margin-top:6px;font:400 clamp(17px,5vw,24px)/1 var(--font-display);letter-spacing:.14em;color:#fff;text-align:center;opacity:.92}
+.ht-sub{margin-top:10px;font:800 14px var(--font-body);letter-spacing:.1em;color:var(--muted);text-align:center}
+.ht-sub b{color:var(--pop)}
+@media (prefers-reduced-motion:reduce){#toast,#zone{transition:none}#score.pop,.coins.bump{animation:none}}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="Hue Tower game area"></canvas>
+<div class="topbar" id="topbar" hidden>
+  <div class="coins" id="coinPill" aria-label="Coins this run"><span class="coin"></span><span id="coinCount">0</span></div>
+  <button class="pbtn" id="pauseBtn" aria-label="Pause"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1.5" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1.5" fill="currentColor"/></svg></button>
+</div>
+<div class="hud" id="hud" hidden>
+  <div id="score">0</div>
+  <div id="next"></div>
+  <div id="fever" hidden>FEVER 2× <span class="meter"><i id="feverBar"></i></span></div>
+  <div id="toast" aria-live="polite"></div>
+</div>
+<div id="zone" aria-hidden="true"><small id="zoneNum">Zone 2</small><b id="zoneName">Twilight</b></div>
+
+<script>/*KITJS*/</script>
+<script>
+(()=>{
+'use strict';
+const cv=document.getElementById('game'),ctx=cv.getContext('2d');
+const $=id=>document.getElementById(id);
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FONT='"Lilita One",sans-serif';
+
+let W=0,H=0,dpr=1,blockH=26,baseW=220,baseY=0;
+function resize(){
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  W=cv.clientWidth;H=cv.clientHeight;
+  cv.width=W*dpr;cv.height=H*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);
+  blockH=Math.max(22,Math.min(34,H/26));
+  baseW=Math.min(W*0.62,280);
+  baseY=H*0.72;
+}
+addEventListener('resize',resize);resize();
+
+/* ---------- seeded random so levels and the Daily Challenge are the same for everyone ---------- */
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let rng=Math.random;
+
+/* ---------- themes (shop skins) ---------- */
+const THEMES=[
+  {id:'rainbow',name:'Rainbow',cost:0,col:(i,h0)=>[(h0+i*7)%360,72,60]},
+  {id:'candy',name:'Candy',cost:120,col:i=>[[330,180,35,265,140][i%5],85,76]},
+  {id:'ice',name:'Glacier',cost:220,col:i=>[192+(i%6)*4,70,66+(i%3)*6]},
+  {id:'lava',name:'Lava',cost:320,col:i=>[4+(i%8)*5,90,54]},
+  {id:'neon',name:'Neon',cost:420,neon:true,col:i=>[(i*38)%360,100,62]},
+  {id:'gold',name:'Gold Rush',cost:500,col:i=>[42+(i%4)*2,85,50+(i%2)*7]}];
+let theme=THEMES[0];
+const BOOSTERS=[
+  {id:'slow',name:'Slow start',icon:'🐢',cost:60,desc:'First 8 blocks move at half speed'},
+  {id:'wide',name:'Wide base',icon:'↔️',cost:80,desc:'Start on a wider tower'},
+  {id:'save',name:'Safety net',icon:'🪂',cost:120,desc:'Saves your tower from one miss'}];
+
+/* ---------- zones ---------- */
+const ZONES=[
+  {at:0,name:'Dusk',top:[29,18,64],bot:[91,42,94],stars:.35},
+  {at:20,name:'Twilight',top:[15,28,61],bot:[44,74,122],stars:.55},
+  {at:40,name:'Aurora',top:[6,35,31],bot:[31,92,85],stars:.7},
+  {at:60,name:'Stratosphere',top:[9,11,28],bot:[38,33,77],stars:.85},
+  {at:85,name:'Deep Space',top:[2,2,10],bot:[20,10,43],stars:1}];
+let zoneIdx=0,zoneFrom=ZONES[0],zoneFade=1;
+
+/* ---------- levels ---------- */
+const LEVELS=30;
+function levelCfg(i){const target=10+i*2;return{mode:'level',level:i,target,speedAt:i*3,seed:5303*(i+1)+11,p2:Math.round(target*.3),p3:Math.round(target*.55)}}
+function dailyCfg(seed,key){return{mode:'daily',target:40,speedAt:25,seed,key}}
+const endlessCfg=()=>({mode:'endless',speedAt:0,seed:null});
+
+/* ---------- missions (kept between games) ---------- */
+const MT={
+  score:{targets:[10,20,35,50,75],reward:t=>t,text:t=>`Reach ${t} in one game`,perGame:true},
+  perfects:{targets:[3,6,10,15,20],reward:t=>t*3,text:t=>`Land ${t} perfects in one game`,perGame:true},
+  combo:{targets:[3,4,6,8,10],reward:t=>t*5,text:t=>`Get a ${t}× perfect streak`,perGame:true},
+  coinsGame:{targets:[15,30,50,80,120],reward:t=>Math.round(t*.6),text:t=>`Earn ${t} coins in one game`,perGame:true},
+  fevers:{targets:[1,1,2,2,3],reward:t=>t*20,text:t=>t>1?`Start ${t} Fevers in one game`:'Start a Fever',perGame:true},
+  games:{targets:[3,5,8,10,15],reward:t=>t*4,text:t=>`Play ${t} games`,stat:'games'},
+  blocks:{targets:[60,150,300,500,800],reward:t=>Math.round(t/6),text:t=>`Stack ${t} blocks in total`,stat:'blocks'},
+  powers:{targets:[2,4,6,10,15],reward:t=>t*5,text:t=>`Grab ${t} power-ups`,stat:'powers'}};
+let M;// mission state lives in the kit's save: GM.store
+function mInit(){M=GM.store;if(!M.missions){M.missions=[];M.done=0;M.stats={games:0,blocks:0,powers:0}}refillMissions()}
+function mLevel(){return Math.floor(M.done/3)+1}
+function newMission(exclude){
+  const types=Object.keys(MT).filter(k=>!exclude.includes(k));
+  const type=types[Math.floor(Math.random()*types.length)],def=MT[type];
+  const t=def.targets[Math.min(4,mLevel()-1)];
+  return{type,target:t,reward:def.reward(t),progress:0,base:def.stat?M.stats[def.stat]:0,done:false};
+}
+function refillMissions(){M.missions=M.missions.filter(m=>!m.done&&MT[m.type]);while(M.missions.length<3)M.missions.push(newMission(M.missions.map(m=>m.type)));GM.save()}
+function missionHtml(){return M.missions.map(m=>{const p=Math.min(m.target,m.progress);return`<li class="mission${m.done?' done':''}"><span class="t">${m.done?'✓ ':''}${MT[m.type].text(m.target)}</span><span class="r"><span class="coin"></span>${m.reward}</span><span class="bar"><i style="width:${p/m.target*100}%"></i></span><span class="p">${m.done?'Complete':p+' / '+m.target}</span></li>`}).join('')}
+function openMissions(){
+  refillMissions();
+  GM.sheet('missionsL','Missions',`<div class="lvlpill">MISSION LEVEL ${mLevel()}</div><p class="gm-p">Finish missions for coins. Every 3 you finish raises your mission level.</p><ul class="missions">${missionHtml()}</ul>
+    <ul class="help"><li><b>FEVER</b>5 perfects in a row: 2× coins and easier perfects for 8 blocks.</li><li><b>WIDE</b>Grows your tower back to full width.</li><li><b>SLOW</b>Slows the next 5 blocks.</li><li><b>×5</b>Gold block worth 5 coins.</li></ul>`);
+}
+function checkMissions(final){
+  if(cfg.tut)return;
+  for(const m of M.missions){
+    if(m.done)continue;const def=MT[m.type];
+    if(def.perGame){const v={score:run.score,perfects:run.perfects,combo:run.combo,coinsGame:run.coins,fevers:run.fevers}[m.type];m.progress=Math.max(m.progress,v)}
+    else m.progress=M.stats[def.stat]-m.base;
+    if(m.progress>=m.target){m.done=true;M.done++;GM.addCoins(m.reward);if(!final)toast(`Mission done! +${m.reward}`,'good');beep(784,.12);setTimeout(()=>beep(1046,.2),120)}
+  }
+  GM.save();
+}
+
+/* ---------- audio + haptics via the kit (respects Settings) ---------- */
+const beep=(f,d=.09,type='triangle',vol=.12)=>GM.tone(f,f,d,type,vol*.7);
+const buzz=ms=>GM.vibrate(ms);
+
+/* ---------- HUD ---------- */
+let toastT;
+function toast(text,kind){const el=$('toast');el.textContent=text;el.classList.toggle('good',kind==='good');el.classList.toggle('hot',kind==='hot');el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),kind?1500:750)}
+let zoneT;
+function zoneBanner(i){$('zoneNum').textContent='Zone '+(i+1);$('zoneName').textContent=ZONES[i].name;$('zone').classList.add('show');clearTimeout(zoneT);zoneT=setTimeout(()=>$('zone').classList.remove('show'),1600);beep(523,.12);setTimeout(()=>beep(784,.18),110)}
+function paintNext(){
+  const el=$('next');
+  if(cfg.tut){el.textContent='Tutorial';return}
+  if(cfg.target){el.textContent=(cfg.mode==='daily'?'Daily · ':'Level '+(cfg.level+1)+' · ')+'goal '+cfg.target;return}
+  const nz=ZONES[zoneIdx+1];el.textContent=nz?`${nz.name} in ${nz.at-score}`:`Zone ${zoneIdx+1} · ${ZONES[zoneIdx].name}`;
+}
+function paintFever(){$('fever').hidden=fever<=0;$('feverBar').style.width=(fever/8*100)+'%'}
+function paintCoins(){$('coinCount').textContent=run?run.coins:0}
+function bumpCoins(){paintCoins();const p=$('coinPill');p.classList.remove('bump');void p.offsetWidth;p.classList.add('bump')}
+function popScore(){const s=$('score');s.textContent=score;s.classList.remove('pop');void s.offsetWidth;s.classList.add('pop')}
+function showHud(on){$('hud').hidden=!on;$('topbar').hidden=!on}
+
+/* ---------- game state ---------- */
+let state='attract',cfg=endlessCfg(),stack=[],cur=null,falling=[],sparks=[],rings=[],cam=0,score=0,combo=0,hue0=0;
+let run=null,slowLeft=0,lastPower=0,fever=0,shake=0,flash=null,bestCrossed=false,startBest=0,boosts={},netUsed=false,tutDrops=0,tutKey='';
+const stars=Array.from({length:80},()=>({x:Math.random(),y:Math.random(),r:Math.random()*1.4+.3,t:Math.random()*6}));
+function layerY(i){return baseY-i*blockH}
+
+function reset(c){
+  cfg=c;rng=c.seed!=null?mulberry(c.seed):Math.random;
+  hue0=Math.floor(rng()*360);
+  const bw=boosts.wide?Math.min(W*.8,baseW*1.3):baseW;
+  stack=[{x:(W-bw)/2,w:bw,i:0}];
+  falling=[];sparks=[];rings=[];score=0;combo=0;cam=0;slowLeft=boosts.slow?8:0;lastPower=0;fever=0;shake=0;flash=null;netUsed=false;
+  zoneIdx=0;zoneFrom=ZONES[0];zoneFade=1;bestCrossed=false;startBest=cfg.mode==='endless'?GM.best('endless'):0;tutDrops=0;tutKey='';
+  run={score:0,perfects:0,combo:0,coins:0,fevers:0,revived:false};
+  spawn();
+}
+function spawn(fromSide){
+  const prev=stack[stack.length-1],i=stack.length;
+  const fromLeft=fromSide!==undefined?fromSide:i%2===0;
+  let speed=Math.min(150+(score+cfg.speedAt)*6,520)*(W/400)**.5;
+  if(cfg.tut)speed*=.5;
+  if(slowLeft>0){speed*=.5;slowLeft--}
+  let power=null;
+  if(!cfg.tut&&state!=='attract'&&score>=5&&score-lastPower>=5&&rng()<.18){
+    power=prev.w/baseW<.55&&rng()<.6?'wide':['wide','slow','gold'][Math.floor(rng()*3)];lastPower=score;
+  }
+  cur={x:fromLeft?-prev.w*.6:W-prev.w*.4,w:prev.w,dir:fromLeft?1:-1,speed,i,power};
+}
+function start(c){
+  boosts={};if(!c.tut)GM.takeBoosters().forEach(id=>boosts[id]=true);
+  state='play';reset(c);theme=THEMES.find(t=>t.id===GM.equipped())||THEMES[0];
+  showHud(true);$('score').textContent='0';paintNext();paintFever();paintCoins();
+  const on=Object.keys(boosts).map(id=>BOOSTERS.find(b=>b.id===id).icon).join(' ');if(on)GM.toast('Boosters on: '+on);
+}
+function earn(n){if(fever>0)n*=2;run.coins+=n;bumpCoins()}
+
+/* attract mode on the home screen: a ghost tower that builds itself */
+function toAttract(){state='attract';showHud(false);GM.handHide();boosts={};reset({mode:'endless',speedAt:6,seed:null});theme=THEMES.find(t=>t.id===GM.equipped())||THEMES[0]}
+function attractStep(){const prev=stack[stack.length-1];if(Math.abs(cur.x-prev.x)<cur.speed/60){stack.push({x:prev.x,w:prev.w,i:cur.i});score++;if(stack.length>28){stack=stack.slice(-1);stack[0].i=0;score=0;cam=0}spawn()}}
+
+function gameOver(){
+  state='dead';fever=0;paintFever();
+  if(cfg.tut){return}
+  M.stats.games++;checkMissions(true);
+  const nb=cfg.mode==='endless'&&GM.best('endless',score);
+  setTimeout(()=>{
+    const base={title:'Toppled!',coins:run.coins,canRevive:!run.revived&&score>=3,reviveLabel:'Save your tower',onRevive:revive,onHome:goHome};
+    if(cfg.mode==='endless')GM.results({...base,label:'Height',score,newBest:nb&&score>0,best:GM.best('endless'),onRetry:()=>start(endlessCfg())});
+    else if(cfg.mode==='level')GM.results({...base,label:'Level '+(cfg.level+1)+' · goal '+cfg.target,score:score+'/'+cfg.target,retryLabel:'Retry level',onRetry:()=>start(levelCfg(cfg.level))});
+    else GM.results({...base,label:'Daily Challenge · goal '+cfg.target,score:score+'/'+cfg.target,onRetry:()=>start(dailyCfg(cfg.seed,cfg.key))});
+  },700);
+  beep(140,.35,'sawtooth',.08);buzz(120);
+}
+function revive(){run.revived=true;state='play';showHud(true);slowLeft=3;combo=0;spawn(Math.random()<.5);toast('Back in it!','good');beep(523,.1);setTimeout(()=>beep(784,.15),100)}
+function win(){
+  state='win';cur=null;shake=6;GM.vibrate(60);
+  const top=stack[stack.length-1];for(let k=0;k<4;k++)setTimeout(()=>burst(top.x-40,layerY(stack.length-1),top.w+80,(k*90)%360,30,70),k*150);
+  toast('GOAL!','good');beep(659,.1);setTimeout(()=>beep(880,.1),90);setTimeout(()=>beep(1319,.25),180);
+  M.stats.games++;checkMissions(true);
+  setTimeout(()=>{
+    if(cfg.mode==='level'){
+      const st=1+(run.perfects>=cfg.p2?1:0)+(run.perfects>=cfg.p3?1:0);const ns=GM.setStars(cfg.level,st);
+      GM.results({win:true,title:'Level '+(cfg.level+1)+' complete!',label:'Perfects (★★ '+cfg.p2+' · ★★★ '+cfg.p3+')',score:run.perfects,stars:st,coins:run.coins,
+        extra:ns?{label:'New star bonus',amount:ns*10}:null,retryLabel:'Replay',onRetry:()=>start(levelCfg(cfg.level)),onNext:cfg.level<LEVELS-1?()=>start(levelCfg(cfg.level+1)):null,onHome:goHome});
+    }else{const rew=GM.dailyComplete(cfg.key);
+      GM.results({win:true,title:'Daily Challenge done!',label:'Height',score,coins:run.coins,extra:rew?{label:'Daily reward',amount:rew}:null,retryLabel:'Play again',onRetry:()=>start(dailyCfg(cfg.seed,cfg.key)),onHome:goHome})}
+  },1300);
+}
+function goHome(){toAttract();GM.showHome()}
+function openPause(){if(state!=='play')return;state='paused';GM.handHide();tutKey='';
+  GM.pause({onResume:()=>{state='play'},onRestart:()=>cfg.tut?tutorial():start(cfg.mode==='level'?levelCfg(cfg.level):cfg.mode==='daily'?dailyCfg(cfg.seed,cfg.key):endlessCfg()),onHome:goHome})}
+
+function burst(x,y,w,h,n,light){if(reduced)return;for(let k=0;k<n;k++)sparks.push({x:x+Math.random()*w,y,vx:(Math.random()-.5)*200,vy:-Math.random()*200-40,life:1,h,l:light})}
+function drop(){
+  const prev=stack[stack.length-1],y=layerY(stack.length);
+  const L=Math.max(cur.x,prev.x),R=Math.min(cur.x+cur.w,prev.x+prev.w),ov=R-L;
+  if(ov<=0){
+    falling.push({x:cur.x,y,w:cur.w,vy:0,vx:cur.dir*40,rot:0,vr:cur.dir*1.5,i:cur.i});
+    shake=reduced?0:10;buzz(80);
+    if(cfg.tut){GM.toast('Missed! Tap when it\'s right above the tower');spawn();return}
+    if(boosts.save&&!netUsed){netUsed=true;toast('🪂 Safety net!','good');slowLeft=2;spawn();return}
+    cur=null;gameOver();return;
+  }
+  const [hh]=theme.col(cur.i,hue0);
+  const tol=Math.max(3,W*.008)*(fever>0?2.5:1)*(cfg.tut?2:1);
+  let nx=L,nw=ov,perfect=false;
+  if(Math.abs(cur.x-prev.x)<tol){
+    perfect=true;nx=prev.x;nw=prev.w;combo++;run.perfects++;run.combo=Math.max(run.combo,combo);
+    if(combo>=3){nw=Math.min(prev.w+10,baseW);nx=prev.x-(nw-prev.w)/2}
+    earn(combo>=3?2:1);
+    burst(nx,y,nw,hh,16,75);rings.push({x:nx+nw/2,y:y+blockH/2,w:nw,life:1});
+    beep(440*Math.pow(2,Math.min(combo,14)/12),.12,'triangle');buzz(15);
+    if(combo===5&&fever<=0){fever=9;run.fevers++;toast('FEVER! 2× coins','hot');beep(880,.1,'square',.06);setTimeout(()=>beep(1175,.15,'square',.06),90)}
+    else toast(combo>1?`Perfect ×${combo}`:'Perfect');
+    shake=reduced?0:4;
+  }else{
+    combo=0;if(score%2)earn(1);
+    const left=cur.x<prev.x,cutX=left?cur.x:R,cutW=cur.w-ov;
+    falling.push({x:cutX,y,w:cutW,vy:0,vx:(left?-1:1)*60,rot:0,vr:(left?-1:1)*2.2,i:cur.i});
+    beep(300+score*4,.07,'square',.06);buzz(8);shake=reduced?0:2;
+  }
+  if(cur.power){
+    M.stats.powers++;
+    if(cur.power==='wide'){const c=nx+nw/2;nw=baseW;nx=Math.max(4,Math.min(W-nw-4,c-nw/2));toast('Wide!','good')}
+    if(cur.power==='slow'){slowLeft=5;toast('Slow-mo for 5 blocks','good')}
+    if(cur.power==='gold'){earn(5);toast(fever>0?'+10 coins':'+5 coins','good');burst(nx,y,nw,45,26,65)}
+    beep(880,.1,'sine',.1);
+  }
+  stack.push({x:nx,w:nw,i:cur.i});flash={i:stack.length-1,life:1,perfect};
+  if(fever>0){fever--;if(fever===0)toast('Fever over')}
+  score++;run.score=score;if(!cfg.tut)M.stats.blocks++;popScore();
+  if(cfg.tut){tutDrops++;tutKey='';if(tutDrops>=6){tutorialDone();return}}
+  if(!bestCrossed&&startBest>0&&score>startBest){bestCrossed=true;toast('New best!','good');burst(0,y,W,50,30,70);beep(659,.1);setTimeout(()=>beep(880,.1),90);setTimeout(()=>beep(1319,.2),180)}
+  let z=0;for(let k=0;k<ZONES.length;k++)if(score>=ZONES[k].at)z=k;
+  if(z!==zoneIdx){zoneFrom=currentBg();zoneIdx=z;zoneFade=0;zoneBanner(z);earn(3)}
+  paintNext();paintFever();checkMissions(false);
+  if(cfg.target&&score>=cfg.target){win();return}
+  spawn();
+}
+
+/* ---------- tutorial: wait until the block is right above the tower, then tap ---------- */
+function tutorial(){start({mode:'level',level:0,speedAt:0,seed:99,tut:true})}
+function tutorialTick(){
+  if(!cur)return;const prev=stack[stack.length-1];const aligned=Math.abs(cur.x-prev.x)<prev.w*.15;
+  const k=(aligned?'tap':'wait')+tutDrops;if(k===tutKey)return;tutKey=k;
+  if(aligned)GM.hand({x:W/2,y:H*.86,mode:'tap',text:'<b>TAP now!</b>',tipAt:'top'});
+  else GM.hand({text:['The block slides back and forth. <b>Tap</b> when it is right above the tower.','Overhangs get <b>sliced off</b>, so line it up!','Land <b>perfects</b> in a row to grow the tower back and start a <b>Fever</b>.','Great! A few more…'][Math.min(tutDrops,3)],tipAt:'top'});
+}
+function tutorialDone(){
+  state='win';cur=null;GM.handHide();GM.tutorialDone();burst(0,layerY(stack.length-1),W,60,40,70);beep(659,.1);setTimeout(()=>beep(988,.2),100);
+  setTimeout(()=>GM.results({title:"You're ready!",label:'Tutorial complete',score:'★',coins:20,retryLabel:'Play Level 1',onRetry:()=>start(levelCfg(0)),onHome:goHome}),900);
+}
+
+/* ---------- input ---------- */
+function tap(){if(state==='play'&&cur)drop()}
+cv.addEventListener('pointerdown',e=>{e.preventDefault();tap()});
+addEventListener('keydown',e=>{if(e.code==='Space'&&state==='play'){e.preventDefault();tap()}else if(e.key==='Escape')openPause()});
+$('pauseBtn').addEventListener('click',openPause);
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play')openPause()});
+
+/* ---------- drawing ---------- */
+function lerp(a,b,t){return a+(b-a)*t}
+function mix(c1,c2,t){return c1.map((v,k)=>Math.round(lerp(v,c2[k],t)))}
+function currentBg(){const z=ZONES[zoneIdx];return{top:mix(zoneFrom.top,z.top,zoneFade),bot:mix(zoneFrom.bot,z.bot,zoneFade),stars:lerp(zoneFrom.stars,z.stars,zoneFade)}}
+function block(x,y,w,i,a=1,power=null,t=0){
+  const [h,s,l]=theme.col(i,hue0);ctx.globalAlpha=a;
+  if(power){const glow=.35+.25*Math.sin(t*8);ctx.fillStyle=power==='gold'?`rgba(255,209,102,${glow})`:`rgba(255,255,255,${glow})`;ctx.fillRect(x-5,y-5,w+10,blockH+10)}
+  const edge=Math.max(3,blockH*.17);
+  if(theme.neon){ctx.fillStyle=`hsla(${h},${s}%,${l}%,.25)`;ctx.fillRect(x-2,y-2,w+4,blockH+4);ctx.fillStyle='#120d26';ctx.fillRect(x+1,y+1,w-2,blockH-2);ctx.strokeStyle=`hsl(${h} ${s}% ${l}%)`;ctx.lineWidth=2;ctx.strokeRect(x+1,y+1,w-2,blockH-2)}
+  else{ctx.fillStyle=power==='gold'?'hsl(44 92% 55%)':`hsl(${h} ${s}% ${l}%)`;ctx.fillRect(x,y,w,blockH);
+    ctx.fillStyle=power==='gold'?'hsl(48 100% 78%)':`hsl(${h} ${Math.min(100,s+10)}% ${Math.min(92,l+14)}%)`;ctx.fillRect(x,y,w,edge);
+    ctx.fillStyle=power==='gold'?'hsl(38 80% 38%)':`hsl(${h} ${s-10}% ${Math.max(15,l-18)}%)`;ctx.fillRect(x,y+blockH-edge,w,edge)}
+  if(power){ctx.fillStyle=theme.neon?'#fff':'rgba(20,14,40,.85)';ctx.font=`${Math.round(blockH*.62)}px ${FONT}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText({wide:'WIDE',slow:'SLOW',gold:'×5'}[power],x+w/2,y+blockH/2+1)}
+  ctx.globalAlpha=1;
+}
+function flagLine(n,label,col){const by=layerY(n)+blockH;if(by+cam<-20||by+cam>H+20)return;ctx.strokeStyle=col;ctx.lineWidth=2;ctx.setLineDash([8,7]);ctx.beginPath();ctx.moveTo(0,by);ctx.lineTo(W,by);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=col;ctx.font=`15px ${FONT}`;ctx.textAlign='right';ctx.textBaseline='bottom';ctx.fillText(label,W-14,by-4)}
+
+let last=performance.now(),tt=0;
+function frame(now){
+  const dt=Math.min((now-last)/1000,.05);last=now;tt+=dt;
+  if((state==='play'||state==='attract')&&cur){
+    cur.x+=cur.dir*cur.speed*dt;const minX=-cur.w*.6,maxX=W-cur.w*.4;
+    if(cur.x>maxX){cur.x=maxX;cur.dir=-1}if(cur.x<minX){cur.x=minX;cur.dir=1}
+    if(state==='attract')attractStep();else if(cfg.tut)tutorialTick();
+  }
+  const topY=layerY(stack.length);const want=Math.max(0,H*.45-topY);
+  cam+=(want-cam)*Math.min(1,dt*(state==='dead'?2:6));
+  if(zoneFade<1)zoneFade=Math.min(1,zoneFade+dt*.6);
+  shake*=Math.pow(.0005,dt);const sx=shake>.3?(Math.random()-.5)*shake:0,sy=shake>.3?(Math.random()-.5)*shake:0;
+  const bg=currentBg();const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,`rgb(${bg.top})`);g.addColorStop(1,`rgb(${bg.bot})`);ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  if(fever>0&&state==='play'){ctx.fillStyle=`rgba(255,95,162,${.08+.06*Math.sin(tt*10)})`;ctx.fillRect(0,0,W,H)}
+  if(zoneIdx>=2&&!reduced){const a=zoneIdx===2?.18*zoneFade:.08;for(let r=0;r<2;r++){ctx.beginPath();ctx.moveTo(0,H*(.18+r*.12));for(let x=0;x<=W;x+=20)ctx.lineTo(x,H*(.18+r*.12)+Math.sin(x/90+tt*.6+r*2)*22);ctx.lineTo(W,0);ctx.lineTo(0,0);ctx.closePath();ctx.fillStyle=r?`rgba(124,196,255,${a})`:`rgba(110,231,183,${a})`;ctx.fill()}}
+  for(const s of stars){const tw=reduced?.6:.5+.5*Math.sin(tt*1.5+s.t);ctx.globalAlpha=tw*bg.stars;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(s.x*W,((s.y*H+cam*.15)%H),s.r,0,7);ctx.fill()}
+  ctx.globalAlpha=1;
+  ctx.save();ctx.translate(sx,cam+sy);
+  ctx.fillStyle='rgba(0,0,0,.28)';ctx.fillRect(0,baseY+blockH,W,H+cam);
+  if(state!=='attract'){
+    if(cfg.target)flagLine(cfg.target,'GOAL '+cfg.target,'rgba(110,231,183,.95)');
+    else if(startBest>0&&!bestCrossed)flagLine(startBest+1,'BEST '+startBest,'rgba(255,209,102,.9)');
+  }
+  const dim=state==='attract'?.45:1;
+  const firstVis=Math.max(0,Math.floor((baseY+cam-H)/blockH)-1);
+  for(let i=firstVis;i<stack.length;i++){const b=stack[i];block(b.x,layerY(i),b.w,b.i,dim)}
+  if(flash&&flash.life>0){const b=stack[flash.i];if(b){ctx.globalAlpha=flash.life*(flash.perfect?.75:.4);ctx.fillStyle='#fff';ctx.fillRect(b.x,layerY(flash.i),b.w,blockH);ctx.globalAlpha=1}flash.life-=dt*4}
+  if(cur&&(state==='play'||state==='paused'||state==='attract')){const prev=stack[stack.length-1];
+    if(state!=='attract'){ctx.fillStyle='rgba(255,255,255,.07)';ctx.fillRect(prev.x,layerY(stack.length),prev.w,blockH)}
+    block(cur.x,layerY(stack.length),cur.w,cur.i,dim,cur.power,tt)}
+  for(let k=rings.length-1;k>=0;k--){const r=rings[k];r.life-=dt*2.2;if(r.life<=0){rings.splice(k,1);continue}const grow=(1-r.life)*30;ctx.globalAlpha=r.life;ctx.strokeStyle=fever>0?'#ff5fa2':'#fff';ctx.lineWidth=3;ctx.strokeRect(r.x-r.w/2-grow,r.y-blockH/2-grow*.6,r.w+grow*2,blockH+grow*1.2)}
+  ctx.globalAlpha=1;
+  for(let k=falling.length-1;k>=0;k--){const f=falling[k];f.vy+=1400*dt;f.y+=f.vy*dt;f.x+=f.vx*dt;f.rot+=f.vr*dt;ctx.save();ctx.translate(f.x+f.w/2,f.y+blockH/2);ctx.rotate(f.rot);block(-f.w/2,-blockH/2,f.w,f.i,.9);ctx.restore();if(f.y+cam>H+200)falling.splice(k,1)}
+  for(let k=sparks.length-1;k>=0;k--){const s=sparks[k];s.vy+=500*dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt*1.6;if(s.life<=0){sparks.splice(k,1);continue}ctx.globalAlpha=s.life;ctx.fillStyle=`hsl(${s.h} 90% ${s.l}%)`;ctx.fillRect(s.x,s.y,4,4)}
+  ctx.globalAlpha=1;ctx.restore();
+  if(slowLeft>0&&state==='play'){ctx.fillStyle='rgba(124,196,255,.10)';ctx.fillRect(0,0,W,H)}
+  requestAnimationFrame(frame);
+}
+
+/* ---------- intro logo animation: rainbow blocks drop and stack, then the title appears ---------- */
+function introDraw(g,w,h,p,t){
+  const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#1d1240');gr.addColorStop(1,'#5b2a5e');g.fillStyle=gr;g.fillRect(0,0,w,h);
+  const bh=Math.min(h/22,34),bw=Math.min(w*.5,220),n=7,base=h*.62;
+  for(let i=0;i<n;i++){const appear=Math.min(1,Math.max(0,(p-i*.06)/.08));if(appear<=0)continue;
+    const yy=base-i*bh-(1-appear*appear)*h*.5;const ww=bw*(1-i*.06);const x=w/2-ww/2+(i%2?1:-1)*(1-appear)*w*.3;
+    const hue=(330+i*40)%360;g.globalAlpha=appear;g.fillStyle=`hsl(${hue} 72% 60%)`;g.fillRect(x,yy,ww,bh);g.fillStyle=`hsl(${hue} 82% 74%)`;g.fillRect(x,yy,ww,bh*.18);g.fillStyle=`hsl(${hue} 62% 42%)`;g.fillRect(x,yy+bh*.82,ww,bh*.18)}
+  g.globalAlpha=1;
+  const tp=Math.min(1,Math.max(0,(p-.5)/.25));
+  if(tp>0){g.save();g.globalAlpha=tp;g.translate(w/2,h*.8);const sc=.7+.3*(1-Math.pow(1-tp,3));g.scale(sc,sc);g.textAlign='center';g.textBaseline='middle';
+    g.font='400 '+Math.round(Math.min(w*.16,80))+'px "Lilita One",sans-serif';const tw=g.measureText('Hue Tower').width;const lg=g.createLinearGradient(-tw/2,0,tw/2,0);
+    ['#ff7aa2','#ffd166','#6ee7b7','#7cc4ff','#b69cff'].forEach((c,i)=>lg.addColorStop(i/4,c));g.fillStyle='rgba(0,0,0,.35)';g.fillText('Hue Tower',0,5);g.fillStyle=lg;g.fillText('Hue Tower',0,0);
+    g.font='400 '+Math.round(Math.min(w*.055,26))+'px "Lilita One",sans-serif';g.fillStyle='#fff';g.fillText('C O L O R   B L O C K   S T A C K',0,Math.min(w*.16,80)*.72);g.restore()}
+  if(p>.9){g.fillStyle='rgba(7,6,15,'+((p-.9)/.1)+')';g.fillRect(0,0,w,h)}
+}
+
+/* ---------- Golden Mayhem kit setup ---------- */
+GM.init({
+  id:'huetower',name:'Hue Tower',version:'1.0',
+  privacyUrl:'https://claude.ai/artifact/NruVLGTydhwiybgQxy2iMb',
+  currency:{icon:'●',name:'Coins'},
+  titleHtml:'<div><div class="ht-title">Hue Tower</div><div class="ht-tag">COLOR BLOCK STACK</div><div class="ht-sub" id="htBest"></div></div>',
+  playLabel:'Endless',
+  music:{root:220,bpm:96,prog:[[0,4,7],[5,9,12],[-3,0,4],[7,11,14]],pattern:[0,2,1,2,0,2,1,2],wave:'triangle'},
+  intro:{draw:introDraw},
+  extra:{label:'Missions',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>',open:openMissions,
+    refresh:()=>({sub:'Level '+mLevel(),dot:M.missions.some(m=>!m.done&&m.progress>=m.target*.7)})},
+  onHome(){toAttract();const b=GM.best('endless');$('htBest').innerHTML=b?'BEST <b>'+b+'</b>':'TAP TO DROP · STACK THE BLOCKS'},
+  onPlay(){start(endlessCfg())},
+  onBack(){openPause()},
+  levels:{count:LEVELS,play:i=>start(levelCfg(i)),hint:'Stack up to the green GOAL line. Land perfects for more stars.'},
+  daily:{goal:'Today\'s tower: stack <b>40 blocks</b> starting at <b>high speed</b>. Every day is a new tower!',play:(seed,key)=>start(dailyCfg(seed,key))},
+  shop:{skinsTitle:'Themes',skins:THEMES.map(t=>({id:t.id,name:t.name,cost:t.cost,swatch:'background:#0d0a1f;flex-direction:column-reverse;display:flex;align-items:center;justify-content:center;gap:2px',
+    icon:'<span style="display:flex;flex-direction:column-reverse;align-items:center;gap:2px;width:46px">'+[0,1,2,3].map(k=>{const [hh,s,l]=t.col(k*2,200);return t.neon?`<i style="display:block;height:8px;width:${44-k*8}px;border-radius:2px;background:#120d26;box-shadow:inset 0 0 0 2px hsl(${hh} ${s}% ${l}%)"></i>`:`<i style="display:block;height:8px;width:${44-k*8}px;border-radius:2px;background:hsl(${hh} ${s}% ${l}%)"></i>`}).join('')+'</span>'})),
+    boosters:BOOSTERS,onEquip:id=>{theme=THEMES.find(t=>t.id===id)||THEMES[0]}},
+  tutorial(){tutorial()}
+});
+toAttract();mInit();requestAnimationFrame(frame);
+// test hook used to record store screenshots
+window.__ht={drop:()=>drop(),start:c=>start(c),levelCfg,get s(){return{state,cur,prev:stack[stack.length-1],score,run}},set(fn){fn({stack,setScore:v=>{score=v}})}};
+})();
+</script>
+</body>
+</html>

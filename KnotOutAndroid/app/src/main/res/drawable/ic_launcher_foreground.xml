@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- three ropes with arrowheads, like the game -->
+    <path android:pathData="M34,40 L58,40 L58,62" android:strokeColor="#FF5D6C" android:strokeWidth="8" android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"/>
+    <path android:pathData="M52,62 L58,74 L64,62 Z" android:fillColor="#FF5D6C"/>
+    <path android:pathData="M74,34 L74,70" android:strokeColor="#FFC23D" android:strokeWidth="8" android:strokeLineCap="round" android:fillColor="#00000000"/>
+    <path android:pathData="M68,34 L74,24 L80,34 Z" android:fillColor="#FFC23D"/>
+    <path android:pathData="M34,74 L48,74" android:strokeColor="#3DDC97" android:strokeWidth="8" android:strokeLineCap="round" android:fillColor="#00000000"/>
+    <path android:pathData="M48,68 L58,74 L48,80 Z" android:fillColor="#3DDC97"/>
+</vector>

@@ -1,0 +1,38 @@
+# Hue Tower – Android project (by Goldenmayhem)
+
+Package name: **com.goldenmayhem.huetowergame** · Targets **Android 16 (API 36)** · Version 1.0 (versionCode 1)
+
+## 1. Open it
+1. Unzip this folder somewhere easy, e.g. `C:\Goldenmayhem\HueTowerAndroid`.
+2. Android Studio: **File > Open**, pick the `HueTowerAndroid` folder, **Trust**.
+3. If it asks "Please Select Gradle JVM", click **Use JVM 21**. Wait for Gradle sync to finish.
+4. Optional test: plug in your phone (USB debugging on) and press the green **Run** button. Debug builds always show Google's test ads.
+
+## 2. AdMob IDs (still to do)
+In AdMob create an app called "Hue Tower" (Android, not listed yet) with one Rewarded and one Interstitial ad unit.
+Then open `gradle.properties`, remove the `#` in front of the three AdMob lines and paste the IDs.
+Until you do, every build uses Google's test ads. Never tap your own real ads.
+
+## 3. Make a NEW upload key and BACK IT UP
+1. **Build > Generate Signed App Bundle or APK > Android App Bundle > Next**.
+2. Key store path: **Create new...** and save it as `C:\Goldenmayhem\huetower-upload.jks`. Do not reuse another game's key.
+3. Your own password, alias `upload`, your name, **OK**, then **release > Create**.
+4. **Back up the .jks file and its password right away** (Google Drive + USB stick).
+5. The bundle lands in `app\release\app-release.aab`.
+
+## 4. Google Play Console
+Everything for Google Play is in `store/LAUNCH-PACK.txt`: listing text, store settings, every App content answer, closed test setup,
+a tester recruitment post and draft answers for the production application. The `store` folder also has the icon, the feature graphic,
+6 phone screenshots and 6 tablet screenshots.
+For every later update, raise `versionCode` by 1 in `app/build.gradle.kts`.
+
+## What's inside
+- The whole game: `app/src/main/assets/index.html` (works offline, fonts built in)
+- Golden Mayhem kit: studio intro, tutorial with a pointing hand, 30 levels with stars, Missions, Daily Challenge calendar + streak,
+  free gift timer, chests, shop (skins + boosters), settings (music, sound, vibration, daily reminder, privacy), rate-us card
+- Ads (rewarded + gently paced interstitials), Google consent form + "Ad privacy choices", rating card, reminder, vibration: `MainActivity.kt`
+- Daily Challenge reminder (about 6 pm, player can turn it on/off in Settings): `Reminder.kt`
+
+## Security built in
+Target API 36, no plain-http traffic, the game runs from the app's own private https address, file and content access off,
+Safe Browsing on, outside links open in the browser. Android back gesture pauses a game, closes menus and only leaves the app from the home screen.

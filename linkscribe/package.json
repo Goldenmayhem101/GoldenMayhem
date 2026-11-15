@@ -1,0 +1,12 @@
+{
+  "name": "linkscribe",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Paste a YouTube link, get the full transcript. Powered by Google Gemini.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

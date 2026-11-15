@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Moonhop</title>
+<style>/*FONTS*/</style>
+<style>/*KITCSS*/</style>
+<style>
+/* Layout: full-screen space canvas; thin HUD on top; all menus come from the Golden Mayhem kit */
+:root{
+  --void:#0b0a2a; --void-2:#241450; --ink:#f4f1ff; --muted:#a79fd6; --dust:#ffe08a; --hot:#ff7a59;
+  --gm-bg:#0b0a2a; --gm-panel:#1a1442; --gm-panel-2:#120e33; --gm-edge:#3a2d86; --gm-ink:#f4f1ff; --gm-muted:#a79fd6;
+  --gm-accent:#ffe08a; --gm-accent-ink:#1d1446; --gm-good:#6fe8b0; --gm-coin:#ffe08a; --gm-scrim:rgba(8,6,30,.8);
+  --gm-font-display:'Baloo Display','Trebuchet MS',system-ui,sans-serif; --gm-font-body:'Baloo 2','Trebuchet MS',system-ui,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%;margin:0}
+body{background:var(--void);color:var(--ink);font-family:var(--gm-font-body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+[hidden]{display:none!important}
+.app{position:fixed;inset:0;overflow:hidden}
+canvas#cv{display:block;width:100%;height:100%;touch-action:none}
+.hud{position:absolute;inset:0 0 auto;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) max(14px,env(safe-area-inset-right,0px)) 0 max(14px,env(safe-area-inset-left,0px));pointer-events:none}
+.score{font:800 52px/.9 var(--gm-font-body);font-variant-numeric:tabular-nums;text-shadow:0 3px 0 var(--void)}
+.score small{display:block;font-size:12px;font-weight:800;letter-spacing:.16em;color:var(--muted);text-shadow:none;margin-bottom:4px}
+.score .of{font-size:26px;color:var(--muted)}
+.right{display:flex;align-items:center;gap:10px}
+.dust{font:800 22px var(--gm-font-body);color:var(--dust);font-variant-numeric:tabular-nums}
+.boosts{font-size:16px;letter-spacing:2px}
+.pbtn{pointer-events:auto;width:44px;height:44px;border-radius:14px;border:0;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 2px rgba(255,255,255,.1);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.pbtn svg{width:20px;height:20px}
+.mh-title{font:400 clamp(64px,19vw,96px)/.85 var(--gm-font-display);letter-spacing:-.01em;background:linear-gradient(180deg,#fff,#c9c0ff 60%,#8f84d8);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 #0b0a2a);text-align:center}
+.mh-sub{margin-top:10px;font:800 15px var(--gm-font-body);color:var(--muted);letter-spacing:.08em;text-align:center}
+.mh-sub b{color:var(--dust)}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <canvas id="cv" aria-label="Moonhop game"></canvas>
+  <div class="hud" id="hud" hidden>
+    <div class="score"><small id="hudLabel">WORLDS</small><span id="sc">0</span><span class="of" id="scOf"></span></div>
+    <div class="right"><span class="boosts" id="boostIcons"></span><span class="dust">✦ <span id="du">0</span></span>
+      <button class="pbtn" id="pauseBtn" aria-label="Pause"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" rx="1.5" fill="currentColor"/><rect x="14" y="4" width="4" height="16" rx="1.5" fill="currentColor"/></svg></button></div>
+  </div>
+</div>
+
+<script>/*KITJS*/</script>
+<script>
+'use strict';
+const $=s=>document.querySelector(s);
+const cv=$('#cv'),ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1,bgGrad=null;
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);ctx.setTransform(DPR,0,0,DPR,0,0);
+  bgGrad=ctx.createLinearGradient(0,0,0,H);bgGrad.addColorStop(0,'#0b0a2a');bgGrad.addColorStop(1,'#241450')}
+addEventListener('resize',resize);resize();
+
+/* ---------- content ---------- */
+const PAL=[['#ff9a6b','#b8405a'],['#6fd3ff','#2b58b8'],['#a5ff8f','#2c8a62'],['#ffd86b','#c4681f'],['#d59bff','#6a3db8'],['#ff7fb6','#9b2f6c'],['#7fffe0','#1f7c86']];
+const SKINS=[
+  {id:'pearl',name:'Pearl',cost:0,c:['#ffffff','#cfd3ff']},
+  {id:'ember',name:'Ember',cost:120,c:['#ffd0a0','#ff6a3d']},
+  {id:'mint',name:'Mint',cost:220,c:['#d6fff1','#2fd3a0']},
+  {id:'ice',name:'Comet Ice',cost:350,c:['#ffffff','#56c8ff']},
+  {id:'nova',name:'Nova',cost:500,c:['#fff6a8','#ff4fd8'],rainbow:true}];
+const BOOSTERS=[
+  {id:'shield',name:'Shield',icon:'🛡️',cost:90,desc:'Survive one crash'},
+  {id:'magnet',name:'Magnet',icon:'🧲',cost:70,desc:'Pulls in nearby stardust'},
+  {id:'steady',name:'Steady orbit',icon:'🌙',cost:110,desc:'Slower, calmer orbits all run'}];
+const LEVELS=30;
+function levelCfg(i){return{mode:'level',level:i,goal:6+Math.round(i*1.15),base:Math.round(i*0.9),seed:7919*(i+1)+13}}
+function dailyCfg(seed,key){return{mode:'daily',goal:25,base:16,seed,key}}
+
+/* ---------- seeded random so every level and Daily Challenge is the same for everyone ---------- */
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let rng=Math.random;
+const R=(a,b)=>a+rng()*(b-a);
+
+const stars=[0.15,0.35,0.6].map((f,li)=>({f,pts:Array.from({length:55},()=>({x:Math.random(),y:Math.random(),s:Math.random()*1.3+.4+li*.3,tw:Math.random()*6}))}));
+let state='attract',cfg={mode:'endless',base:0},planets=[],rocks=[],dusts=[],parts=[],trail=[],moon=null,camY=0,score=0,runDust=0,totalDust=0,made=0,t=0,revived=false,flash=0;
+let boosts={},shieldUsed=false,tutHops=0,tutMsg='';
+const diff=()=>cfg.base+score;
+
+function makePlanet(x,y,first){
+  const d=diff();const r=first?26:R(17,29);let type='normal';
+  if(!first&&!cfg.tut){const q=rng();if(d>=5&&q<Math.min(.4,.18+d*.01))type='decay';else if(d>=3&&rng()<.3)type='fast'}
+  return{x,y,r,ring:r+46,col:PAL[Math.floor(rng()*PAL.length)],type,ringed:rng()<.35,tilt:R(-.5,.5),life:type==='decay'?3.4:0,alive:true,visited:first,spin:R(0,6)};
+}
+function makeHaven(x,y){return{x,y,r:30,ring:30+50,col:['#fff3b0','#e8a417'],type:'haven',ringed:true,tilt:-.25,life:0,alive:true,visited:false,spin:0}}
+function spawnAhead(){
+  while(planets[planets.length-1].y>camY-H*1.2){
+    if(cfg.goal&&made>=cfg.goal)break;
+    const p=planets[planets.length-1];
+    const gap=Math.min(H*.36,175+Math.min(70,diff()*2.5))*R(.92,1.15);
+    const ny=p.y-gap;let nx=p.x+R(-.42,.42)*W;
+    if(Math.abs(nx-p.x)<40)nx+=nx<W/2?60:-60;
+    nx=Math.max(56,Math.min(W-56,nx));
+    made++;const np=(cfg.goal&&made===cfg.goal)?makeHaven(nx,ny):makePlanet(nx,ny,false);planets.push(np);
+    const n=cfg.tut?2:(rng()<.7?(1+Math.floor(rng()*3)):0);
+    for(let i=0;i<n;i++){const k=(i+1)/(n+1);dusts.push({x:p.x+(nx-p.x)*k+(cfg.tut?0:R(-40,40)),y:p.y+(ny-p.y)*k+(cfg.tut?0:R(-20,20)),got:false,ph:R(0,6)});totalDust++}
+    if(!cfg.tut&&diff()>=8&&rng()<.35){rocks.push({cx:W/2,y:(p.y+ny)/2+R(-15,15),amp:W*R(.25,.42),sp:R(.7,1.3)*(rng()<.5?-1:1),ph:R(0,6),r:R(9,13),x:0})}
+  }
+  const cut=camY+H*2;
+  planets=planets.filter(p=>p.y<cut||p===moon.p||p===moon.last);dusts=dusts.filter(d=>d.y<cut);rocks=rocks.filter(r=>r.y<cut);
+}
+function setup(c){
+  cfg=c;rng=c.seed!=null?mulberry(c.seed):Math.random;
+  score=0;runDust=0;totalDust=0;made=0;revived=false;shieldUsed=false;parts=[];trail=[];dusts=[];rocks=[];tutHops=0;
+  const p0=makePlanet(W/2,H*.68,true);planets=[p0];
+  moon={mode:'orbit',p:p0,ang:-Math.PI/2,rad:p0.r+24,dir:1,x:0,y:0,vx:0,vy:0,ft:0,last:p0};
+  camY=p0.y-H*.66;spawnAhead();updHud();
+}
+function omega(p){let w=2.3+Math.min(1.6,diff()*.05);if(p.type==='fast')w*=1.55;if(p.type==='haven')w=1.4;if(boosts.steady)w*=.82;if(cfg.tut)w*=.62;return w}
+function updHud(){
+  $('#sc').textContent=score;$('#du').textContent=runDust;
+  $('#scOf').textContent=cfg.goal?' / '+cfg.goal:'';
+  $('#hudLabel').textContent=cfg.tut?'TUTORIAL':cfg.mode==='level'?'LEVEL '+(cfg.level+1):cfg.mode==='daily'?'DAILY':'WORLDS';
+  $('#boostIcons').textContent=(boosts.shield&&!shieldUsed?'🛡️':'')+(boosts.magnet?'🧲':'')+(boosts.steady?'🌙':'');
+}
+function burst(x,y,col,n=14,sp=160){for(let i=0;i<n;i++){const a=Math.random()*6.283,s=(.3+Math.random()*.7)*sp;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.4+Math.random()*.4,max:.8,col})}}
+
+/* ---------- run flow ---------- */
+function startRun(c){
+  setup(c);
+  boosts={};if(!c.tut)GM.takeBoosters().forEach(id=>boosts[id]=true);
+  updHud();$('#hud').hidden=false;state='play';
+  if(boosts.shield||boosts.magnet||boosts.steady)GM.toast('Boosters on: '+$('#boostIcons').textContent);
+}
+function toAttract(){
+  GM.handHide();$('#hud').hidden=true;state='attract';
+  setup({mode:'endless',base:0,seed:null});
+}
+function launch(){
+  if(state!=='play'||moon.mode!=='orbit')return;
+  const sp=560,a=moon.ang;
+  moon.vx=-Math.sin(a)*moon.dir*sp;moon.vy=Math.cos(a)*moon.dir*sp;
+  moon.mode='fly';moon.ft=0;moon.last=moon.p;moon.p=null;
+  GM.tone(300,700,.15,'triangle');
+}
+function respawn(){
+  let p=moon.p&&moon.p.alive?moon.p:moon.last;if(!p||!p.alive)p=planets.filter(q=>q.alive&&q.visited).pop()||planets.find(q=>q.alive);
+  p.alive=true;if(p.type==='decay')p.life=3.4;
+  moon.mode='orbit';moon.p=p;moon.last=p;moon.rad=p.r+24;moon.ang=-Math.PI/2;trail=[];rocks=rocks.filter(r=>Math.abs(r.y-p.y)>70);
+}
+function die(msg){
+  if(state!=='play')return;
+  if(cfg.tut){burst(moon.x,moon.y,'#ffffff',14,140);respawn();GM.toast('Try again: tap when the line points at the world');return}
+  if(boosts.shield&&!shieldUsed){shieldUsed=true;burst(moon.x,moon.y,'#6fd3ff',22,180);GM.tone(900,300,.3,'triangle',.06);GM.vibrate(40);respawn();updHud();GM.toast('🛡️ Shield saved you!');return}
+  state='dead';burst(moon.x,moon.y,'#ffffff',26,220);GM.tone(400,60,.6,'sawtooth',.06);GM.vibrate(80);
+  setTimeout(()=>showFail(msg),750);
+}
+function showFail(msg){
+  const base={title:msg,coins:runDust,canRevive:!revived,reviveLabel:'Keep going',onRevive:revive,onHome:goHome};
+  if(cfg.mode==='endless'){const nb=GM.best('endless',score);GM.results({...base,label:'Worlds reached',score,newBest:nb&&score>0,best:GM.best('endless'),onRetry:()=>startRun(cfg)})}
+  else if(cfg.mode==='level')GM.results({...base,label:'Level '+(cfg.level+1)+' · reach '+cfg.goal+' worlds',score:score+'/'+cfg.goal,retryLabel:'Retry level',onRetry:()=>startRun(levelCfg(cfg.level))});
+  else GM.results({...base,label:'Daily Challenge',score:score+'/'+cfg.goal,retryLabel:'Retry',onRetry:()=>startRun(dailyCfg(cfg.seed,cfg.key))});
+}
+function revive(){revived=true;state='play';respawn();$('#hud').hidden=false;updHud()}
+function win(){
+  state='win';flash=.6;GM.vibrate(60);
+  const h=planets[planets.length-1];for(let i=0;i<4;i++)setTimeout(()=>burst(h.x,h.y,PAL[i][0],24,260),i*140);
+  setTimeout(()=>{
+    if(cfg.tut){GM.tutorialDone();GM.handHide();GM.results({title:"You're ready!",label:'Tutorial complete',score:'★',coins:runDust+20,stars:null,retryLabel:'Play Level 1',onRetry:()=>startRun(levelCfg(0)),onHome:goHome});return}
+    if(cfg.mode==='level'){
+      const pct=totalDust?runDust/totalDust:1,st=1+(pct>=.5?1:0)+(pct>=.85?1:0);const newSt=GM.setStars(cfg.level,st);
+      GM.results({win:true,title:'Level '+(cfg.level+1)+' complete!',label:'Stardust collected',score:runDust+'/'+totalDust,stars:st,coins:runDust,
+        extra:newSt?{label:'New star bonus',amount:newSt*10}:null,retryLabel:'Replay',onRetry:()=>startRun(levelCfg(cfg.level)),
+        onNext:cfg.level<LEVELS-1?()=>startRun(levelCfg(cfg.level+1)):null,onHome:goHome});
+    }else{
+      const rew=GM.dailyComplete(cfg.key);
+      GM.results({win:true,title:'Daily Challenge done!',label:'Worlds',score:score+'/'+cfg.goal,coins:runDust,extra:rew?{label:'Daily reward',amount:rew}:null,retryLabel:'Play again',onRetry:()=>startRun(dailyCfg(cfg.seed,cfg.key)),onHome:goHome});
+    }
+  },1100);
+}
+function goHome(){toAttract();GM.showHome()}
+function openPause(){if(state!=='play')return;state='paused';GM.handHide();
+  GM.pause({onResume:()=>{state='play'},onRestart:()=>startRun(cfg.mode==='level'?levelCfg(cfg.level):cfg.mode==='daily'?dailyCfg(cfg.seed,cfg.key):{mode:'endless',base:0,seed:null}),onHome:goHome})}
+
+/* ---------- simulation ---------- */
+function nextTarget(){const from=moon.p||moon.last;let best=null;for(const p of planets){if(p.alive&&!p.visited&&p.y<from.y&&(!best||p.y>best.y))best=p}return best}
+function aimedAt(p){if(!p||moon.mode!=='orbit')return false;const a=moon.ang,vx=-Math.sin(a)*moon.dir,vy=Math.cos(a)*moon.dir;const dx=p.x-moon.x,dy=p.y-moon.y,d=Math.hypot(dx,dy);
+  const cos=(vx*dx+vy*dy)/d;if(cos<=0)return false;const ang=Math.acos(Math.min(1,cos));return ang<Math.asin(Math.min(1,(p.ring-8)/d))&&d/560<1.8}
+function step(dt){
+  t+=dt;
+  if(state==='play'||state==='attract'){
+    if(moon.mode==='orbit'){
+      const p=moon.p;moon.ang+=moon.dir*omega(p)*dt;
+      if(moon.rad>p.r+22)moon.rad-=dt*30;
+      moon.x=p.x+Math.cos(moon.ang)*moon.rad;moon.y=p.y+Math.sin(moon.ang)*moon.rad;
+      if(p.type==='decay'&&state==='play'){p.life-=dt;if(p.life<=0){p.alive=false;burst(p.x,p.y,p.col[0],30,240);die('Your world collapsed')}}
+    }else if(moon.mode==='fly'){
+      moon.x+=moon.vx*dt;moon.y+=moon.vy*dt;moon.ft+=dt;
+      for(const p of planets){
+        if(p===moon.last||!p.alive)continue;
+        const dx=moon.x-p.x,dy=moon.y-p.y,d=Math.hypot(dx,dy);
+        if(d<p.ring){
+          moon.mode='orbit';moon.p=p;moon.ang=Math.atan2(dy,dx);moon.rad=Math.max(p.r+14,Math.min(p.ring-4,d));
+          moon.dir=(dx*moon.vy-dy*moon.vx)>=0?1:-1;
+          if(!p.visited){p.visited=true;score++;flash=.3;burst(p.x,p.y,p.col[0],16,140);GM.tone(500,900,.18,'sine',.08);GM.vibrate(12);
+            if(cfg.tut){tutHops++}
+            if(p.type==='haven'){updHud();win();return}}
+          updHud();break;
+        }
+      }
+      if(moon.mode==='fly'&&(moon.x<-30||moon.x>W+30||moon.y>camY+H+40||moon.ft>1.9))die('Lost in space');
+    }
+    if(state==='play'){
+      for(const r of rocks){r.x=r.cx+Math.sin(t*r.sp+r.ph)*r.amp;if(Math.hypot(r.x-moon.x,r.y-moon.y)<r.r+7)die('Hit by a meteor')}
+      for(const d of dusts){if(d.got)continue;
+        if(boosts.magnet){const dx=moon.x-d.x,dy=moon.y-d.y,dd=Math.hypot(dx,dy);if(dd<95&&dd>1){d.x+=dx/dd*dt*260;d.y+=dy/dd*dt*260}}
+        if(Math.hypot(d.x-moon.x,d.y-moon.y)<20){d.got=true;runDust++;burst(d.x,d.y,'#ffe08a',8,90);GM.tone(1200,1600,.08,'sine',.05);updHud()}}
+    }else for(const r of rocks)r.x=r.cx+Math.sin(t*r.sp+r.ph)*r.amp;
+    if(moon.mode==='orbit'){const target=moon.p.y-H*.66;camY+=(target-camY)*Math.min(1,dt*3.5)}
+    if(moon.p||moon.last)spawnAhead();
+    trail.push({x:moon.x,y:moon.y});if(trail.length>22)trail.shift();
+    if(state==='play'&&cfg.tut)tutorialTick();
+  }else{for(const r of rocks)r.x=r.cx+Math.sin(t*r.sp+r.ph)*r.amp}
+  parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.96;p.vy*=.96;p.life-=dt});parts=parts.filter(p=>p.life>0);
+  flash=Math.max(0,flash-dt);
+}
+function tutorialTick(){
+  let msg;
+  if(moon.mode!=='orbit')msg='fly';
+  else{const tg=nextTarget();const ok=aimedAt(tg);
+    msg=ok?'tap':'wait';}
+  const key=msg+tutHops;if(key===tutMsg)return;tutMsg=key;
+  if(msg==='fly'){GM.handHide();return}
+  const lines=[
+    'Your moon is orbiting this world. Wait until the <b>dotted line</b> points at the next world…',
+    'Nice hop! Fly through <b>✦ stardust</b> on the way to collect it.',
+    'One more! The <b>golden Haven</b> world ends the level.',
+    'Hop to the Haven!'];
+  const base=lines[Math.min(tutHops,lines.length-1)];
+  if(msg==='tap')GM.hand({x:W/2,y:H*.78,mode:'tap',text:'<b>TAP now!</b>',tipAt:'top'});
+  else GM.hand({text:base,tipAt:'top'});
+}
+
+/* ---------- drawing ---------- */
+function drawPlanet(p){
+  if(!p.alive)return;
+  const here=moon&&moon.p===p;
+  ctx.save();
+  ctx.setLineDash([3,7]);ctx.lineWidth=1.5;
+  ctx.strokeStyle=here?'rgba(255,255,255,.35)':(p.type==='decay'?'rgba(255,122,89,.55)':p.type==='haven'?'rgba(255,224,138,.7)':'rgba(255,255,255,.16)');
+  ctx.beginPath();ctx.arc(p.x,p.y,p.ring,0,6.283);ctx.stroke();ctx.setLineDash([]);
+  if(p.type==='decay'&&here){ctx.strokeStyle='#ff7a59';ctx.lineWidth=4;ctx.beginPath();ctx.arc(p.x,p.y,p.r+9,-Math.PI/2,-Math.PI/2+6.283*(p.life/3.4));ctx.stroke()}
+  const gr=p.type==='haven'?p.r*(3+Math.sin(t*3)*.3):p.r*2.2;
+  const glow=ctx.createRadialGradient(p.x,p.y,p.r*.5,p.x,p.y,gr);glow.addColorStop(0,p.col[0]+(p.type==='haven'?'88':'55'));glow.addColorStop(1,p.col[0]+'00');
+  ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p.x,p.y,gr,0,6.283);ctx.fill();
+  if(p.ringed){ctx.strokeStyle=p.col[0]+'aa';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(p.x,p.y,p.r*1.7,p.r*.45,p.tilt,Math.PI,6.283);ctx.stroke()}
+  const g=ctx.createRadialGradient(p.x-p.r*.4,p.y-p.r*.45,p.r*.1,p.x,p.y,p.r);g.addColorStop(0,p.col[0]);g.addColorStop(1,p.col[1]);
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);ctx.fill();
+  ctx.save();ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);ctx.clip();ctx.fillStyle='rgba(0,0,0,.12)';
+  for(let i=0;i<3;i++){const a=p.spin+t*(p.type==='fast'?1.2:.4)+i*2.1;ctx.beginPath();ctx.ellipse(p.x+Math.cos(a)*p.r*.55,p.y+Math.sin(i*1.7)*p.r*.4,p.r*.22,p.r*.14,0,0,6.283);ctx.fill()}
+  if(p.type==='decay'){ctx.strokeStyle='rgba(40,0,0,.45)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x-p.r*.6,p.y-p.r*.2);ctx.lineTo(p.x-p.r*.1,p.y+p.r*.1);ctx.lineTo(p.x+p.r*.2,p.y-p.r*.3);ctx.lineTo(p.x+p.r*.7,p.y+p.r*.2);ctx.stroke()}
+  ctx.restore();
+  if(p.ringed){ctx.strokeStyle=p.col[0]+'dd';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(p.x,p.y,p.r*1.7,p.r*.45,p.tilt,0,Math.PI);ctx.stroke()}
+  ctx.textAlign='center';
+  if(p.type==='fast'){ctx.fillStyle='rgba(255,255,255,.7)';ctx.font='700 11px "Baloo 2",sans-serif';ctx.fillText('FAST',p.x,p.y+p.r+16)}
+  if(p.type==='haven'){ctx.fillStyle='#ffe08a';ctx.font='800 12px "Baloo 2",sans-serif';ctx.fillText('★ HAVEN ★',p.x,p.y+p.r+20);
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y-p.r);ctx.lineTo(p.x,p.y-p.r-22);ctx.stroke();ctx.fillStyle='#ff7a59';ctx.beginPath();ctx.moveTo(p.x,p.y-p.r-22);ctx.lineTo(p.x+15+Math.sin(t*6)*2,p.y-p.r-17);ctx.lineTo(p.x,p.y-p.r-12);ctx.fill()}
+  ctx.restore();
+}
+function moonGrad(x,y,sk){const mg=ctx.createRadialGradient(x-2,y-3,1,x,y,8);
+  if(sk.rainbow){mg.addColorStop(0,sk.c[0]);mg.addColorStop(.5,'hsl('+((t*120)%360)+',100%,65%)');mg.addColorStop(1,sk.c[1])}else{mg.addColorStop(0,sk.c[0]);mg.addColorStop(1,sk.c[1])}return mg}
+function skin(){return SKINS.find(s=>s.id===GM.equipped())||SKINS[0]}
+function draw(){
+  ctx.fillStyle=bgGrad;ctx.fillRect(0,0,W,H);
+  for(const L of stars){for(const s of L.pts){const y=(((s.y*H-camY*L.f)%H)+H)%H;ctx.globalAlpha=.35+.35*Math.sin(t*1.5+s.tw);ctx.fillStyle='#ffffff';ctx.fillRect(s.x*W,y,s.s,s.s)}}
+  ctx.globalAlpha=1;
+  if(!moon)return;
+  ctx.save();ctx.translate(0,-camY);
+  if(state==='attract')ctx.globalAlpha=.45;
+  planets.forEach(drawPlanet);ctx.globalAlpha=1;
+  for(const d of dusts){if(d.got)continue;const s=4+Math.sin(t*4+d.ph)*1.2;ctx.fillStyle='#ffe08a';ctx.beginPath();ctx.moveTo(d.x,d.y-s*1.6);ctx.lineTo(d.x+s*.5,d.y-s*.5);ctx.lineTo(d.x+s*1.6,d.y);ctx.lineTo(d.x+s*.5,d.y+s*.5);ctx.lineTo(d.x,d.y+s*1.6);ctx.lineTo(d.x-s*.5,d.y+s*.5);ctx.lineTo(d.x-s*1.6,d.y);ctx.lineTo(d.x-s*.5,d.y-s*.5);ctx.closePath();ctx.fill()}
+  for(const r of rocks){const g=ctx.createRadialGradient(r.x-3,r.y-3,1,r.x,r.y,r.r);g.addColorStop(0,'#c9b8a8');g.addColorStop(1,'#5a4a44');ctx.fillStyle=g;ctx.beginPath();ctx.arc(r.x,r.y,r.r,0,6.283);ctx.fill();ctx.fillStyle='rgba(255,122,89,.25)';ctx.beginPath();ctx.arc(r.x,r.y,r.r+5,0,6.283);ctx.fill()}
+  // tutorial guide line to the next world
+  if(state==='play'&&cfg.tut&&moon.mode==='orbit'){const tg=nextTarget();if(tg){ctx.save();ctx.setLineDash([2,10]);ctx.lineCap='round';ctx.lineWidth=3;ctx.lineDashOffset=-t*30;ctx.strokeStyle=aimedAt(tg)?'#6fe8b0':'rgba(255,224,138,.6)';ctx.beginPath();ctx.moveTo(moon.x,moon.y);ctx.lineTo(tg.x,tg.y);ctx.stroke();ctx.restore()}}
+  if(state!=='dead'){
+    const sk=skin();
+    for(let i=0;i<trail.length;i++){const p=trail[i],k=i/trail.length;ctx.globalAlpha=k*.5;ctx.fillStyle=sk.c[1];ctx.beginPath();ctx.arc(p.x,p.y,7*k,0,6.283);ctx.fill()}
+    ctx.globalAlpha=1;
+    if(moon.mode==='orbit'&&state!=='attract'){const a=moon.ang,tx=-Math.sin(a)*moon.dir,ty=Math.cos(a)*moon.dir;ctx.fillStyle='rgba(255,255,255,.6)';for(let i=1;i<=7;i++){ctx.beginPath();ctx.arc(moon.x+tx*i*12,moon.y+ty*i*12,2.3-i*.2,0,6.283);ctx.fill()}}
+    if(boosts.shield&&!shieldUsed&&state==='play'){ctx.strokeStyle='rgba(111,211,255,'+(.45+Math.sin(t*5)*.2)+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(moon.x,moon.y,13,0,6.283);ctx.stroke()}
+    ctx.shadowColor=sk.c[1];ctx.shadowBlur=16;ctx.fillStyle=moonGrad(moon.x,moon.y,sk);ctx.beginPath();ctx.arc(moon.x,moon.y,8,0,6.283);ctx.fill();ctx.shadowBlur=0;
+  }
+  for(const p of parts){ctx.globalAlpha=Math.max(0,p.life/p.max);ctx.fillStyle=p.col;ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,6.283);ctx.fill()}
+  ctx.globalAlpha=1;ctx.restore();
+  if(flash>0){ctx.fillStyle='rgba(255,255,255,'+(flash*.18)+')';ctx.fillRect(0,0,W,H)}
+}
+let last=performance.now();
+function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;if(W&&moon)step(dt);draw();requestAnimationFrame(loop)}
+
+/* ---------- intro logo animation: a moon leaps from one world to the next, then the title lands ---------- */
+function introDraw(g,w,h,p,tt){
+  const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#0b0a2a');gr.addColorStop(1,'#241450');g.fillStyle=gr;g.fillRect(0,0,w,h);
+  for(let i=0;i<70;i++){const x=(i*97.3%1)*w,y=(i*53.7%1)*h;g.globalAlpha=.3+.3*Math.sin(tt*2+i);g.fillStyle='#fff';g.fillRect((i*0.618*w)%w,(i*0.382*h*3.1)%h,1.6,1.6)}g.globalAlpha=1;
+  const s=Math.min(w,h)/400,A={x:w*.3,y:h*.62},B={x:w*.7,y:h*.36};
+  const pl=(c,r,col)=>{const q=g.createRadialGradient(c.x-r*.4,c.y-r*.45,r*.1,c.x,c.y,r);q.addColorStop(0,col[0]);q.addColorStop(1,col[1]);g.fillStyle=q;g.beginPath();g.arc(c.x,c.y,r,0,6.283);g.fill()};
+  pl(A,30*s,['#6fd3ff','#2b58b8']);pl(B,26*s,['#ff9a6b','#b8405a']);
+  g.strokeStyle='#ff9a6baa';g.lineWidth=3*s;g.beginPath();g.ellipse(B.x,B.y,46*s,12*s,-.3,0,6.283);g.stroke();
+  let mx,my;const leap=Math.min(1,Math.max(0,(p-.25)/.3));
+  if(leap<=0){const a=-Math.PI/2+p*14;mx=A.x+Math.cos(a)*54*s;my=A.y+Math.sin(a)*54*s}
+  else if(leap<1){const e=1-Math.pow(1-leap,2);const sx=A.x+Math.cos(-Math.PI/2+.25*14)*54*s,sy=A.y+Math.sin(-Math.PI/2+.25*14)*54*s;mx=sx+(B.x-sx)*e;my=sy+(B.y-sy)*e-Math.sin(e*Math.PI)*40*s}
+  else{const a=Math.PI/2+(p-.55)*10;mx=B.x+Math.cos(a)*48*s;my=B.y+Math.sin(a)*48*s}
+  g.shadowColor='#cfd3ff';g.shadowBlur=20;g.fillStyle='#fff';g.beginPath();g.arc(mx,my,9*s,0,6.283);g.fill();g.shadowBlur=0;
+  const tp=Math.min(1,Math.max(0,(p-.5)/.25));
+  if(tp>0){const sc=.6+.4*(1-Math.pow(1-tp,3))+Math.sin(tp*Math.PI)*.08;g.save();g.globalAlpha=tp;g.translate(w/2,h*.8);g.scale(sc,sc);g.textAlign='center';g.textBaseline='middle';
+    g.font='400 '+Math.round(Math.min(w*.2,96))+'px "Baloo Display",sans-serif';const tg=g.createLinearGradient(0,-40,0,40);tg.addColorStop(0,'#fff');tg.addColorStop(1,'#a79fd6');g.fillStyle=tg;g.fillText('Moonhop',0,0);g.restore()}
+  if(p>.9){g.fillStyle='rgba(7,6,15,'+((p-.9)/.1)+')';g.fillRect(0,0,w,h)}
+}
+
+/* ---------- input ---------- */
+cv.addEventListener('pointerdown',e=>{e.preventDefault();if(state==='play')launch()});
+addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();if(state==='play')launch()}else if(e.key==='Escape'&&state==='play')openPause()});
+$('#pauseBtn').addEventListener('click',e=>{e.stopPropagation();openPause()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play')openPause()});
+
+/* ---------- Golden Mayhem kit setup ---------- */
+toAttract();
+requestAnimationFrame(loop);
+GM.init({
+  id:'moonhop',name:'Moonhop',version:'1.0',
+  privacyUrl:'https://claude.ai/artifact/RJJWArFFsPnuLrFNJE8G9q',
+  currency:{icon:'✦',name:'Stardust'},
+  titleHtml:'<div><div class="mh-title">Moonhop</div><div class="mh-sub" id="mhBest"></div></div>',
+  playLabel:'Endless',
+  music:{root:196,bpm:84,prog:[[0,4,7,11],[-3,0,4,7],[-7,-3,0,4],[-5,-1,2,5]],pattern:[0,2,1,3,2,1,3,2],wave:'sine'},
+  intro:{draw:introDraw},
+  onHome(){toAttract();const b=GM.best('endless');$('#mhBest').innerHTML=b?'BEST <b>'+b+'</b> WORLDS':'TAP TO HOP BETWEEN WORLDS'},
+  onPlay(){startRun({mode:'endless',base:0,seed:null})},
+  onBack(){openPause()},
+  levels:{count:LEVELS,play:i=>startRun(levelCfg(i)),hint:'Reach the golden Haven world. ★ finish · ★★ grab half the stardust · ★★★ grab almost all of it.'},
+  daily:{goal:'Today\'s route: hop across <b>25 worlds</b> to the golden Haven. Dying worlds and meteors from the very start!',play:(seed,key)=>startRun(dailyCfg(seed,key))},
+  shop:{skinsTitle:'Moons',skins:SKINS.map(s=>({id:s.id,name:s.name,cost:s.cost,swatch:`background:radial-gradient(circle at 35% 30%,${s.c[0]},${s.c[1]});border-radius:50%;box-shadow:0 0 16px ${s.c[1]}`})),boosters:BOOSTERS},
+  tutorial(){$('#hud').hidden=false;startRun({mode:'level',level:0,goal:4,base:0,seed:4242,tut:true});tutMsg=''}
+});
+</script>
+</body>
+</html>

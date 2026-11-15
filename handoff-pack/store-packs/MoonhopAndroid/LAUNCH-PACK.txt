@@ -1,0 +1,195 @@
+MOONHOP – GOOGLE PLAY LAUNCH PACK   (Goldenmayhem)
+Copy each part into Play Console. Character limits are already respected.
+
+============================================================
+1. APP DETAILS (Create app)
+============================================================
+App name: Moonhop: Space Orbit Jump   (25/30)
+Package name: com.goldenmayhem.moonhop
+Default language: English (United States) – en-US
+App or game: Game
+Free or paid: Free
+
+============================================================
+2. MAIN STORE LISTING  (Grow users > Store presence > Store listings)
+============================================================
+APP NAME (25/30)
+Moonhop: Space Orbit Jump
+
+SHORT DESCRIPTION (80/80)
+Leap your moon from world to world. One tap. Endless space. How far can you hop?
+
+FULL DESCRIPTION (1133/4000)
+You are a runaway moon. Tap to let go of your orbit and leap to the next world, but time it right or you'll drift into the dark.
+
+Moonhop is a one-tap space game that's easy to learn and hard to put down. Watch the dotted line, wait for the perfect moment, and hop.
+
+HOW TO PLAY
+• Your moon orbits a planet on its own
+• Tap to leave orbit along the dotted line
+• Land inside the next world's ring to be caught by its gravity
+• Fly through ✦ stardust to collect it
+
+WATCH OUT FOR
+• Dying worlds with a red ring: leave before they collapse
+• FAST worlds that spin you around quicker
+• Meteors that swing across your path
+
+FEATURES
+• 30 hand-tuned levels: reach the golden Haven and earn up to 3 stars
+• Endless mode: chase your best score
+• Daily Challenge: a brand-new route every day. Build your streak
+• Free gifts every few hours and supply chests
+• Unlock glowing moons: Ember, Mint, Comet Ice and the rainbow Nova
+• Boosters: Shield, Magnet and Steady orbit
+• Relaxing space music, sound and vibration you can switch off
+• Plays offline. No purchases. Everything is earned by playing
+
+One tap. Endless space. How far can you hop?
+
+============================================================
+3. GRAPHICS  (all inside this store folder)
+============================================================
+App icon, 512×512 PNG ............ icon-512.png
+Feature graphic (banner), 1024×500 feature-graphic-1024x500.png
+Phone screenshots, 1080×1920 ...... screenshots/01 … 06 (upload all 6, in order)
+7-inch tablet screenshots ......... tablet/01 … 06 (1440×2560)
+10-inch tablet screenshots ........ tablet/01 … 06 (same files are fine)
+Promo video ....................... optional, leave empty for now
+Screenshot captions, in order:
+  1. Tap to leap from world to world
+  2. Reach the golden Haven
+  3. 30 levels, 3 stars each
+  4. A new Daily Challenge every day
+  5. Unlock glowing new moons
+  6. Free gifts, chests & boosters
+
+============================================================
+4. STORE SETTINGS  (Grow users > Store presence > Store settings)
+============================================================
+Category: Arcade
+Tags (pick these): Arcade, Casual, Offline, Single player, Stylized
+Contact email: goldenmayhem.games@gmail.com
+Phone / website: leave empty
+Search keywords (already woven into the description; use for ads/notes): space game, one tap game, orbit jump, planet hop, moon game, offline arcade, casual space, gravity game, endless jumper, relaxing game
+
+============================================================
+5. APP CONTENT  (Policy > App content)
+============================================================
+Privacy policy:
+  https://claude.ai/artifact/RJJWArFFsPnuLrFNJE8G9q   (open it first, Share, set to "Anyone with the link")
+
+App access / Sign-in details:
+  All functionality is available without special access (choose "No")
+
+Ads:
+  Yes, my app contains ads
+
+Content rating:
+  Questionnaire: category "All other app types" > Game. Answer NO to: violence, blood, fear, sexuality, nudity, bad language, drugs, alcohol, tobacco, gambling, simulated gambling, user interaction/chat, sharing location, sharing personal info, digital purchases. Expected result: Everyone / PEGI 3 / USK 0.
+
+Target audience:
+  Ages 13–15, 16–17 and 18+ (do NOT tick under 13). "Could your app unintentionally appeal to children?": No.
+
+Data safety:
+  Collects or shares data: Yes. Encrypted in transit: Yes. Account creation: none. Deletion: users can uninstall / data stays on the phone.
+  Data types (all "Collected" AND "Shared", processed ephemerally: No, required: Yes):
+   • Device or other IDs  → purposes: Advertising or marketing; Fraud prevention, security and compliance
+   • App interactions (App activity) → Advertising or marketing; Analytics
+   • Crash logs + Diagnostics (App info and performance) → Analytics; Fraud prevention, security and compliance
+  Shared with: Google AdMob (third party ad network).
+
+Advertising ID:
+  Yes, uses advertising ID → purposes: Advertising or marketing; Analytics
+
+Government apps:
+  No
+
+Financial features:
+  My app doesn't provide any financial features
+
+Health:
+  My app does not have any health features
+
+News app:
+  No
+
+In-app purchases:
+  None (free, ads only)
+
+AI asset declaration (store listing step 2):
+  Label assets as created or edited using AI, then tick all of them
+
+============================================================
+6. CLOSED TEST  (Test and release > Closed testing > Alpha)
+============================================================
+Countries: Add all countries / regions
+Testers: Google Groups → goldenmayhemtesters@googlegroups.com
+Feedback URL or email: goldenmayhem.games@gmail.com
+Release name: 1.0 (1)
+Release notes:
+<en-US>
+First test build of Moonhop! One tap. Endless space. Please send feedback and bugs to goldenmayhem.games@gmail.com
+</en-US>
+Tester opt-in link (works once Google approves the test): https://play.google.com/apps/testing/com.goldenmayhem.moonhop
+
+============================================================
+7. AdMob
+============================================================
+Done: real IDs are already in gradle.properties
+After the game is live on Google Play: AdMob > Apps > Moonhop > Add store, then finish your AdMob payments profile.
+
+============================================================
+8. TESTER RECRUITMENT POST  (Reddit r/AndroidClosedTesting, r/TestersCommunity, Discord)
+============================================================
+TESTERS NEEDED, WILL RETURN THE FAVOUR.
+
+Looking for testers for my Android game, Moonhop: Space Orbit Jump.
+
+Leap your moon from world to world. One tap. Endless space. How far can you hop? Free to play, no in-app purchases, works offline.
+
+How to join:
+1. Join the testers group: https://groups.google.com/g/goldenmayhemtesters
+2. Become a tester: https://play.google.com/apps/testing/com.goldenmayhem.moonhop
+3. Download it: https://play.google.com/store/apps/details?id=com.goldenmayhem.moonhop
+
+Please keep it installed for 14 days and have a play now and then.
+
+I'll test your app back for the full 14 days. Drop your link in the comments. Thanks!
+
+============================================================
+9. APPLY FOR PRODUCTION  (after 12+ testers for 14 days; dashboard > Apply for production)
+============================================================
+How did you recruit users for your closed test?
+  I recruited testers through a Google Group (goldenmayhemtesters) and Android tester communities on Reddit and Discord, where developers test each other's apps. I also invited friends and family.
+
+How easy was it to recruit testers?  → choose the option that matches (usually 'Neither easy nor difficult')
+
+Describe the engagement you received from testers during your closed test.
+  Testers played the tutorial, the first levels, Endless mode and the Daily Challenge, and opened the shop and settings. Several testers played on multiple days to keep their Daily Challenge streak. I checked Android vitals for crashes and ANRs during the test.
+
+Provide a summary of the feedback that you received from testers.
+  Testers liked the simple controls and the daily rewards. Some found the very first rounds a little fast, so I made the first orbits slower in the tutorial and added a guide line to the next world. Others asked for clearer reward screens, which I improved.
+
+Who is the intended audience of your app?
+  Casual mobile gamers aged 13 and up who want quick, relaxing sessions they can play offline.
+
+Describe how your app provides value to users.
+  Moonhop is a free, offline casual game with short sessions, 30 levels, a Daily Challenge and lots to unlock by playing. There are no purchases; everything is earned in the game.
+
+How many installs do you expect in your first year?  → '0–10K' is a safe honest choice
+
+What changes did you make to your app based on what you learned during the closed test?
+  I made the first orbits slower in the tutorial and added a guide line to the next world, fixed small layout issues on different screen sizes and tuned the difficulty of the early levels.
+
+How did you decide your app was ready for production?
+  After 14 days of closed testing with no crashes in Android vitals, positive tester feedback, and all reported issues fixed in an updated test build.
+
+TIP: upload at least one updated build (raise versionCode) during the 14 days so the 'changes you made' answer is true.
+
+============================================================
+10. FIRST PUBLIC RELEASE NOTES ("What's new", max 500)
+============================================================
+<en-US>
+Welcome to Moonhop! 30 levels, a new Daily Challenge every day, free gifts and loads to unlock. One tap. Endless space.
+</en-US>

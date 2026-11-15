@@ -1,0 +1,14 @@
+ONE CHANGE TO YOUR WEBSITE (needed before the app can work)
+
+Your Linkscribe website needs one small update so the phone app is allowed to talk to it.
+This server.js has three changes: it allows requests from the Android app, it limits free transcripts to 2 every 2 hours per phone, and it lets Google confirm watched videos (so people can earn 1 more by watching a video). The website itself looks the same.
+
+1. Open your LinkScribe repository on GitHub (Goldenmayhem101/LinkScribe).
+2. Click the file server.js, then the pencil icon (Edit).
+3. Select everything (Ctrl+A), delete it, and paste the full contents of the server.js file from this folder.
+4. Click "Commit changes". Render redeploys by itself in about 2 minutes.
+5. Check it: open https://YOUR-ADDRESS.onrender.com/api/config in your browser. You should see something like {"hasSharedKey":true,...}
+
+Do NOT paste your Gemini key anywhere except Render's Environment settings.
+
+After it redeploys, open https://linkscribe-1.onrender.com/api/quota in your browser. You should see something like {"limit":2,"windowHours":2,"left":2,...}

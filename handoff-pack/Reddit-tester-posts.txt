@@ -1,0 +1,93 @@
+REDDIT / DISCORD TESTER POSTS  (copy and paste one post per app)
+Where to post: r/AndroidClosedTesting, r/TestersCommunity, and Android tester Discords.
+Step 0 (do once): your testers group must be the one set on each app's closed test:  goldenmayhemtesters@googlegroups.com
+Order matters for people joining: 1) join the group, 2) click the opt-in link, 3) download.
+
+====================================================================
+1) LINKSCRIBE
+====================================================================
+Title: [Testers needed - will return the favour] Linkscribe: YouTube Transcript (Android)
+
+TESTERS NEEDED, WILL RETURN THE FAVOUR.
+
+Looking for testers for my Android app, Linkscribe: YouTube Transcript.
+
+Paste a YouTube link, get the full transcript with timestamps and speaker labels. Copy it, save it or share it. Free, no account. Contains ads (a banner, and an optional video for extra transcripts).
+
+How to join:
+1. Join the testers group: https://groups.google.com/g/goldenmayhemtesters
+2. Become a tester: https://play.google.com/apps/testing/com.goldenmayhem.linkscribe
+3. Download it: https://play.google.com/store/apps/details?id=com.goldenmayhem.linkscribe
+
+Please keep it installed for 14 days and try a few videos now and then.
+
+I'll test your app back for the full 14 days. Drop your link in the comments. Thanks!
+
+====================================================================
+2) LUDORA: FAIR PLAY DICE GAME
+====================================================================
+(Opt-in and download links work only after this app is uploaded to Play and Google approves the test.)
+Title: [Testers needed - will return the favour] Ludora: Fair Play Dice Game (Android)
+
+TESTERS NEEDED, WILL RETURN THE FAVOUR.
+
+Looking for testers for my Android game, Ludora: Fair Play Dice Game.
+
+Roll the dice, race your pawns home and bump your rivals! 7 game modes, 30+ boards to collect, free to play, no in-app purchases, no pop-up ads (only optional reward videos).
+
+How to join:
+1. Join the testers group: https://groups.google.com/g/goldenmayhemtesters
+2. Become a tester: https://play.google.com/apps/testing/com.goldenmayhem.ludoradice
+3. Download it: https://play.google.com/store/apps/details?id=com.goldenmayhem.ludoradice
+
+Please keep it installed for 14 days and have a play now and then.
+
+I'll test your app back for the full 14 days. Drop your link in the comments. Thanks!
+
+====================================================================
+3) TILTRIX: BLOCK PUZZLE TILT
+====================================================================
+Title: [Testers needed - will return the favour] Tiltrix: Block Puzzle Tilt (Android)
+
+TESTERS NEEDED, WILL RETURN THE FAVOUR.
+
+Looking for testers for my Android game, Tiltrix: Block Puzzle Tilt.
+
+Drop blocks, clear lines, and TILT the whole board when you get stuck! Free to play, no in-app purchases, works offline. Contains ads.
+
+How to join:
+1. Join the testers group: https://groups.google.com/g/goldenmayhemtesters
+2. Become a tester: https://play.google.com/apps/testing/com.goldenmayhem.tiltrix
+3. Download it: https://play.google.com/store/apps/details?id=com.goldenmayhem.tiltrix
+
+Please keep it installed for 14 days and have a play now and then.
+
+I'll test your app back for the full 14 days. Drop your link in the comments. Thanks!
+
+====================================================================
+4) MOONHOP: SPACE ORBIT JUMP
+====================================================================
+Title: [Testers needed - will return the favour] Moonhop: Space Orbit Jump (Android)
+
+TESTERS NEEDED, WILL RETURN THE FAVOUR.
+
+Looking for testers for my Android game, Moonhop: Space Orbit Jump.
+
+Leap your moon from world to world. One tap. Endless space. How far can you hop? Free to play, no in-app purchases, works offline. Contains ads.
+
+How to join:
+1. Join the testers group: https://groups.google.com/g/goldenmayhemtesters
+2. Become a tester: https://play.google.com/apps/testing/com.goldenmayhem.moonhop
+3. Download it: https://play.google.com/store/apps/details?id=com.goldenmayhem.moonhop
+
+Please keep it installed for 14 days and have a play now and then.
+
+I'll test your app back for the full 14 days. Drop your link in the comments. Thanks!
+
+====================================================================
+TIPS
+====================================================================
+- Reply to every comment fast and test their app back. That is how these subs work.
+- Never tell testers to click ads. Never offer rewards for ad clicks.
+- Keep each tester installed for the full 14 days. If someone leaves, you can drop below 12.
+- Ask each tester for their Gmail only if you add emails manually; with the Google Group they just join it.

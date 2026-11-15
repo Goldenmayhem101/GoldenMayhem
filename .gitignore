@@ -1,0 +1,18 @@
+# Godot caches (rebuilt automatically when the project opens)
+.godot/
+# never commit signing material or secrets
+*.jks
+*.keystore
+*.p12
+*.pem
+.env
+local.properties
+# local backup copies (the repo itself is the backup now)
+Mech-Mayhem-backup.zip
+split/
+# exact duplicate downloads
+asset-library/mixamo/sword_shield/basic/
+asset-library/mixamo/sword_shield/pro2/
+asset-library/mixamo/zombie_packs/Not_So_Scary_Zombie_Pack_2/
+asset-library/mixamo/zombie_packs/Not_So_Scary_Zombie_Pack_8/
+asset-library/mixamo/zombie_packs/Scary_Zombie_Pack_6/
