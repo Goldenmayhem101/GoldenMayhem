@@ -21,3 +21,10 @@ The fighting, magic, sword, axe, creature, injured, gesture and locomotion packs
   reactions, dodge roll, get-up, death, jumps, runs, sword moves. No credit required.
 - Baked onto the robot (Mixamo) skeleton: new-game/godot/MayhemPreviews/anim/ — 372 ready-to-play moves
   (c_* = mocap, split into single strikes; k_* = CC0 pack). Re-bake with scripts/Bake.gd.
+
+## Kenney packs (added Nov 2026, all CC0, free for commercial use, credit not required)
+`kenney/` has the GLB models of: racing-kit, toy-car-kit, car-kit, coaster-kit, food-kit, blaster-kit, pirate-kit, watercraft-pack, prototype-kit, blocky-characters, mini-characters, cube-pets, city-kit (roads, commercial, suburban, industrial). Animated characters (survivors, protagonists) are FBX with separate animation files.
+`kenney-audio/` has rpg, music jingles, voiceovers (2), impact, interface, casino and sci-fi sounds.
+
+## Packs with NO license file (check the source before shipping in a game)
+`animals/` (animal-kit, animals-big-pack incl. a monkey, animated-animal-pack), `weapons/` (low-poly, survival, ultimate guns, melee, zombie pack 002), `vehicles/car-ignition-labs.glb`. Verify the license of each before using it in a published game.
