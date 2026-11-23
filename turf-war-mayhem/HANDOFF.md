@@ -1,4 +1,4 @@
-# Dead Zone Mayhem (working title): handoff
+# Turf War Mayhem : handoff
 
 Realistic zombie lane battler, portrait, Godot 4.4 (Compatibility renderer). Companion to the cartoon Squad Mayhem,
 but a different game: gritty city, real soldiers, Mixamo zombies, guns, Warrok boss.
@@ -27,3 +27,6 @@ Open this folder in Godot 4.4.x, press Play. First open takes a minute to import
 
 ## Rules
 No IAP in this game (studio rule). Rewarded video ads only. Never put keystores or passwords in files.
+
+## Performance and quality goals (owner standing target, all games)
+120 FPS or higher and 4K-sharp visuals. Reality: the frame rate follows the phone's screen (many are 60 Hz, some 120 Hz); 3D resolution should be native to the screen with a quality setting. Keep zombie/soldier models light and use 2K+ textures only where seen up close.

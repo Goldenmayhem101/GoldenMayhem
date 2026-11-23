@@ -1,4 +1,4 @@
-# Dead Zone Mayhem: asset list (where each character goes)
+# Turf War Mayhem: asset list (where each character goes)
 
 All characters are Mixamo-rigged, so the same animations (assets/anims/anims.res) work on every one.
 Models were shrunk from ~1.4 GB of source FBX to ~92 MB of GLB (textures cut to 512 px).
@@ -46,8 +46,5 @@ Kenney City Kit (Commercial) and Car Kit, CC0.
 Ch05_nonPBR.fbx and Ch17_nonPBR.fbx were in the first part of the upload that never reached GitHub (piece .001).
 Upload piece .001 again to get them back.
 
-## Licence checklist (do before publishing)
-- Mixamo characters/animations: free to use in games; do not resell the raw files.
-- The "c#" and "Ch##" characters: source/licence not recorded. Confirm where they came from before release.
-- Ultimate Guns: no licence file in the pack. Confirm.
-- Kenney: CC0, fine.
+## Licence
+Owner confirmed (23 Nov 2026) that all characters came from Mixamo and are free to use in the game. Do not resell the raw files. Weapons (Ultimate Guns pack) were not covered by that statement; Kenney is CC0.

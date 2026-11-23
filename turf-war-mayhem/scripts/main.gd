@@ -1,5 +1,5 @@
 extends Node3D
-## Dead Zone Mayhem (working title) - realistic zombie lane battler.
+## Turf War Mayhem (working title) - realistic zombie lane battler.
 ## Drag left/right to steer the squad. Squad auto-runs, auto-fires, passes through gates,
 ## rescues survivors, fights zombies and a boss. Everything is built from code + the GLB files in assets/.
 
@@ -106,7 +106,7 @@ func _ready() -> void:
 				shot_times.append(float(t))
 		start_game()
 	else:
-		show_overlay("DEAD ZONE MAYHEM", "Drag to steer. Your squad shoots by itself.\nGrow the squad. Survive the horde. Kill the boss.", "PLAY")
+		show_overlay("TURF WAR MAYHEM", "Drag to steer. Your squad shoots by itself.\nGrow the squad. Survive the horde. Kill the boss.", "PLAY")
 
 # ---------------------------------------------------------------- helpers
 func load_scene(path: String) -> PackedScene:
