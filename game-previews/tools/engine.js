@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {OBJLoader} from 'three/addons/loaders/OBJLoader.js';
+import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import * as SU from 'three/addons/utils/SkeletonUtils.js';
 export {THREE};
 const GL=new GLTFLoader();const cache={};
@@ -59,7 +64,22 @@ export async function makeEngine(opt={}){
     const grp=new THREE.Group();grp.add(g);let box=new THREE.Box3().setFromObject(g);let sz=box.getSize(new THREE.Vector3());
     let sc=o.s||1;if(o.h)sc=o.h/sz.y;if(o.big)sc=o.big/Math.max(sz.x,sz.y,sz.z);g.scale.multiplyScalar(sc);box=new THREE.Box3().setFromObject(g);const c=box.getCenter(new THREE.Vector3());g.position.set(-c.x,-box.min.y,-c.z);
     grp.position.set(o.x||0,o.y||0,o.z||0);grp.rotation.set(o.rx||0,o.ry||0,o.rz||0);scene.add(grp);return grp;};
-  E.done=async()=>{await new Promise(r=>setTimeout(r,400));cam.updateMatrixWorld();r.render(scene,cam);r.render(scene,cam);
+
+  const FL=new FBXLoader();const fc={};
+  E.loadF=async(path)=>{if(!fc[path])fc[path]=await FL.loadAsync('/assets/'+path);return fc[path];};
+  // E.fbx(modelPath, animPath, {x,y,z,h,ry,t,tint,spd})
+  E.fbx=async(mp,ap,o={})=>{const g=await E.loadF(mp);const inner=SU.clone(g);
+    inner.traverse(m=>{if(m.isMesh||m.isSkinnedMesh){m.castShadow=true;m.receiveShadow=true;m.frustumCulled=false;
+      if(o.tint||o.rough!==undefined){const f=mt=>{const c=mt.clone();if(o.tint)c.color=new THREE.Color(o.tint);if(c.metalness!==undefined)c.metalness=o.metal??0;if(c.shininess!==undefined)c.shininess=20;return c;};m.material=Array.isArray(m.material)?m.material.map(f):f(m.material);}}});
+    if(ap){try{const a=await E.loadF(ap);const mx=new THREE.AnimationMixer(inner);const act=mx.clipAction(a.animations[0]);act.play();mx.setTime(o.t||0.3);E.mixers.push(mx);}catch(e){console.log('anim fail',ap)}}
+    inner.updateMatrixWorld(true);
+    const grp=new THREE.Group();grp.add(inner);let box=new THREE.Box3().setFromObject(inner,true);let sz=box.getSize(new THREE.Vector3());
+    const s=(o.h||1.8)/sz.y;inner.scale.multiplyScalar(s);inner.updateMatrixWorld(true);box=new THREE.Box3().setFromObject(inner,true);const c=box.getCenter(new THREE.Vector3());
+    inner.position.set(-c.x,-box.min.y,-c.z);
+    grp.position.set(o.x||0,o.y||0,o.z||0);grp.rotation.y=o.ry||0;E.scene.add(grp);return grp;};
+  E.done=async()=>{await new Promise(r=>setTimeout(r,400));cam.updateMatrixWorld();
+    if(opt.bloom){const comp=new EffectComposer(r);comp.setPixelRatio(2);comp.setSize(W,H);comp.addPass(new RenderPass(scene,cam));comp.addPass(new UnrealBloomPass(new THREE.Vector2(W,H),opt.bloom.s??.5,opt.bloom.r??.6,opt.bloom.t??.82));comp.addPass(new OutputPass());comp.render();comp.render();}
+    else{r.render(scene,cam);r.render(scene,cam);}
     const hud=document.getElementById('hud');for(const l of E.labels){const v=new THREE.Vector3(...l.p).project(cam);const x=(v.x*0.5+0.5)*W,y=(-v.y*0.5+0.5)*H;
       const d=document.createElement('div');d.style.cssText='position:absolute;transform:translate(-50%,-50%);white-space:nowrap;left:'+x+'px;top:'+y+'px;'+l.css;d.className=l.raw?'':'t';d.innerHTML=l.text;hud.appendChild(d);}
     window.__done=true;};
