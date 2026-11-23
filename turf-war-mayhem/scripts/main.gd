@@ -24,6 +24,30 @@ const WALKERS := ["cop", "girl", "clown", "skeleton", "yaku", "ragged", "tribal"
 const RUNNERS := ["girl", "skinless", "stalker", "ragged"]
 const CIVILIANS := ["scientist_a", "scientist_b", "hazmat_white", "survivor_woman"]
 
+const ZONES := [
+	{"name": "DOWNTOWN", "sky_top": Color(0.07, 0.06, 0.2), "sky_hor": Color(0.95, 0.5, 0.28), "fog": Color(0.32, 0.2, 0.26), "fog_d": 0.009,
+	 "amb": Color(0.5, 0.46, 0.6), "bld": Color(0.58, 0.52, 0.56), "boss": "bosses/warrok", "boss_name": "WARROK", "boss_h": 4.4, "boss_hp": 30000.0,
+	 "elite": "elites/mutant_brute", "hpm": 1.0, "nm": 1.0, "bombers": false},
+	{"name": "NIGHT SHIFT", "sky_top": Color(0.01, 0.02, 0.08), "sky_hor": Color(0.12, 0.14, 0.3), "fog": Color(0.05, 0.07, 0.14), "fog_d": 0.012,
+	 "amb": Color(0.3, 0.36, 0.62), "bld": Color(0.4, 0.45, 0.62), "boss": "bosses/pumpkin_hulk", "boss_name": "PUMPKIN HULK", "boss_h": 4.6, "boss_hp": 80000.0,
+	 "elite": "elites/alien", "hpm": 1.4, "nm": 1.3, "bombers": true},
+	{"name": "THE FOG", "sky_top": Color(0.18, 0.2, 0.22), "sky_hor": Color(0.55, 0.58, 0.55), "fog": Color(0.45, 0.48, 0.46), "fog_d": 0.02,
+	 "amb": Color(0.62, 0.64, 0.62), "bld": Color(0.6, 0.62, 0.6), "boss": "bosses/moose_beast", "boss_name": "MOOSE BEAST", "boss_h": 5.0, "boss_hp": 120000.0,
+	 "elite": "elites/war_zombie", "hpm": 1.9, "nm": 1.6, "bombers": true},
+]
+const HEROES := {
+	"hazmat_armor": {"name": "HAZMAT", "perk": "+15% damage", "cost": 250},
+	"captain_suit": {"name": "CAPTAIN", "perk": "+4 starting squad", "cost": 300},
+	"red_agent": {"name": "RED AGENT", "perk": "+12% fire rate", "cost": 300},
+	"brawler": {"name": "BRAWLER", "perk": "bosses hurt 30% less", "cost": 400},
+}
+const UPGRADES := {
+	"dmg": {"name": "DAMAGE", "desc": "+12% bullet damage"},
+	"squad": {"name": "START SQUAD", "desc": "+2 soldiers at the start"},
+	"rate": {"name": "FIRE RATE", "desc": "+8% shooting speed"},
+}
+const SAVE_PATH := "user://turf_war_mayhem.json"
+
 # Level script: "d" = distance along the road. Gate sides: add / sub / mul / weapon.
 const LEVEL := [
 	{"d": 28, "t": "gate", "l": {"k": "add", "v": 6}, "r": {"k": "sub", "v": 4}},
@@ -41,6 +65,29 @@ const LEVEL := [
 	{"d": 262, "t": "boss"},
 ]
 
+var save := {"coins": 0, "up": {"dmg": 0, "squad": 0, "rate": 0}, "zone": 0, "unlocked": 0, "hero": "", "heroes": [], "quality": 1, "fps": false}
+var zone: Dictionary = {}
+var run_coins := 0
+var bld_mats: Array = []
+var env: Environment
+var sky_mat: ProceduralSkyMaterial
+var sfx_players: Array = []
+var sfx_streams := {}
+var sfx_i := 0
+var menu: Control
+var menu_main: Control
+var menu_up: Control
+var menu_hero: Control
+var lbl_menu_coins: Label
+var lbl_zone: Label
+var lbl_fps: Label
+var boss_name_lbl: Label
+var sun: DirectionalLight3D
+var level: Array = []
+var dmg_mult := 1.0
+var rate_mult := 1.0
+var boss_resist := 1.0
+var perf_acc := 0.0
 var font: Font
 var anims: AnimationLibrary
 var lib_cache := {}
@@ -49,7 +96,6 @@ var scene_cache := {}
 var state := "menu"          # menu / play / win / lose
 var squad_count := 8
 var weapon_idx := 0
-var coins := 0
 var kills := 0
 var dist := 0.0              # distance travelled along the road
 var squad_x := 0.0
@@ -95,18 +141,108 @@ func _ready() -> void:
 	anims = load("res://assets/anims/anims.res")
 	shots_dir = OS.get_environment("DZM_SHOTS")
 	auto_play = shots_dir != ""
+	load_save()
+	if OS.get_environment("DZM_COINS") != "":
+		save["coins"] = int(OS.get_environment("DZM_COINS"))
+		save["unlocked"] = 2
+	if OS.get_environment("DZM_ZONE") != "":
+		save["zone"] = int(OS.get_environment("DZM_ZONE"))
+	zone = ZONES[clampi(int(save["zone"]), 0, ZONES.size() - 1)]
+	compute_stats()
+	apply_quality()
+	_setup_audio()
 	_build_environment()
 	_build_road()
 	_build_squad()
 	_build_hud()
+	_build_menu()
+	level = build_level()
+	apply_zone_look()
 	if auto_play:
 		var times := OS.get_environment("DZM_TIMES")
 		for t in times.split(","):
 			if t.strip_edges() != "":
 				shot_times.append(float(t))
+		if OS.get_environment("DZM_MENU") != "":
+			show_menu()
+			show_page(OS.get_environment("DZM_MENU"))
+		else:
+			start_game()
+	elif Engine.has_meta("autostart") and Engine.get_meta("autostart"):
+		Engine.set_meta("autostart", false)
 		start_game()
 	else:
-		show_overlay("TURF WAR MAYHEM", "Drag to steer. Your squad shoots by itself.\nGrow the squad. Survive the horde. Kill the boss.", "PLAY")
+		show_menu()
+
+# ---------------------------------------------------------------- save, stats, quality, audio
+func load_save() -> void:
+	if FileAccess.file_exists(SAVE_PATH):
+		var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
+		var d = JSON.parse_string(f.get_as_text())
+		if d is Dictionary:
+			for k in d.keys():
+				save[k] = d[k]
+	for k in ["dmg", "squad", "rate"]:
+		if not save["up"].has(k):
+			save["up"][k] = 0
+
+func write_save() -> void:
+	var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if f:
+		f.store_string(JSON.stringify(save))
+
+func upgrade_cost(k: String) -> int:
+	return int(50.0 * pow(float(save["up"][k]) + 1.0, 1.6))
+
+func compute_stats() -> void:
+	dmg_mult = 1.0 + 0.12 * float(save["up"]["dmg"])
+	rate_mult = 1.0 + 0.08 * float(save["up"]["rate"])
+	squad_count = 8 + 2 * int(save["up"]["squad"])
+	boss_resist = 1.0
+	match str(save["hero"]):
+		"hazmat_armor": dmg_mult *= 1.15
+		"captain_suit": squad_count += 4
+		"red_agent": rate_mult *= 1.12
+		"brawler": boss_resist = 0.7
+
+func apply_quality() -> void:
+	# quality 1 = high (3D drawn up to ~1440p), 0 = balanced (up to ~1080p). Saves battery on weak phones.
+	var sz := DisplayServer.window_get_size()
+	var long_side := float(maxi(sz.x, sz.y))
+	var cap := 2560.0 if int(save["quality"]) == 1 else 1920.0
+	var sc := 1.0
+	if long_side > cap:
+		sc = cap / long_side
+	get_viewport().scaling_3d_scale = sc
+
+func _setup_audio() -> void:
+	for n in ["shot", "hit", "zdie", "boom", "roar", "gate", "click", "bad", "win", "lose"]:
+		sfx_streams[n] = load("res://assets/audio/%s.ogg" % n)
+	for i in range(10):
+		var p := AudioStreamPlayer.new()
+		add_child(p)
+		sfx_players.append(p)
+
+func snd(n: String, vol := -6.0, pitch := 1.0) -> void:
+	if not sfx_streams.has(n):
+		return
+	var p: AudioStreamPlayer = sfx_players[sfx_i % sfx_players.size()]
+	sfx_i += 1
+	p.stream = sfx_streams[n]
+	p.volume_db = vol
+	p.pitch_scale = pitch
+	p.play()
+
+func build_level() -> Array:
+	var out: Array = []
+	for ev in LEVEL:
+		var e: Dictionary = ev.duplicate(true)
+		if e["t"] == "horde":
+			e["n"] = int(round(float(e["n"]) * float(zone["nm"])))
+			if bool(zone["bombers"]) and e["kind"] == "mixed":
+				e["kind"] = "mixed_bomb"
+		out.append(e)
+	return out
 
 # ---------------------------------------------------------------- helpers
 func load_scene(path: String) -> PackedScene:
@@ -217,6 +353,7 @@ func _build_environment() -> void:
 	env.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
 	var sm := ProceduralSkyMaterial.new()
+	sky_mat = sm
 	sm.sky_top_color = Color(0.07, 0.06, 0.2)
 	sm.sky_horizon_color = Color(0.95, 0.5, 0.28)
 	sm.ground_horizon_color = Color(0.6, 0.3, 0.25)
@@ -235,8 +372,9 @@ func _build_environment() -> void:
 	env.glow_intensity = 0.8
 	env.glow_bloom = 0.1
 	we.environment = env
+	self.env = env
 	add_child(we)
-	var sun := DirectionalLight3D.new()
+	sun = DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55, 150, 0)
 	sun.light_color = Color(1, 0.7, 0.5)
 	sun.light_energy = 1.25
@@ -254,6 +392,22 @@ func _build_environment() -> void:
 	add_child(cam)
 	cam.current = true
 
+func apply_zone_look() -> void:
+	sky_mat.sky_top_color = zone["sky_top"]
+	sky_mat.sky_horizon_color = zone["sky_hor"]
+	sky_mat.ground_horizon_color = zone["sky_hor"].darkened(0.3)
+	env.fog_light_color = zone["fog"]
+	env.fog_density = zone["fog_d"]
+	env.ambient_light_color = zone["amb"]
+	for m in bld_mats:
+		(m as BaseMaterial3D).albedo_color = zone["bld"]
+	if lbl_zone:
+		lbl_zone.text = "ZONE %d: %s" % [int(save["zone"]) + 1, zone["name"]]
+	if boss_name_lbl:
+		boss_name_lbl.text = zone["boss_name"]
+	if lbl_level:
+		lbl_level.text = "ZONE %d" % (int(save["zone"]) + 1)
+
 func mat(c: Color, rough := 0.9, emit := 0.0) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = c
@@ -264,15 +418,18 @@ func mat(c: Color, rough := 0.9, emit := 0.0) -> StandardMaterial3D:
 		m.emission_energy_multiplier = emit
 	return m
 
-func darken(node: Node, tint: Color) -> void:
+func darken(node: Node, tint: Color, track := false) -> void:
 	for mi in node.find_children("*", "MeshInstance3D", true, false):
 		var m: MeshInstance3D = mi
+		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		for i in range(m.mesh.get_surface_count()):
 			var sm := m.get_active_material(i)
 			if sm is BaseMaterial3D:
 				var d: BaseMaterial3D = sm.duplicate()
 				d.albedo_color = tint
 				m.set_surface_override_material(i, d)
+				if track:
+					bld_mats.append(d)
 
 func _build_road() -> void:
 	var road := MeshInstance3D.new()
@@ -325,7 +482,7 @@ func _build_road() -> void:
 			bld.scale = Vector3.ONE * s
 			bld.rotation.y = (PI / 2.0) if side < 0 else (-PI / 2.0)
 			bld.position = Vector3(side * (LANE_HALF + 3.6 + rng.randf_range(2.2, 3.4) + bb.size.z * s * 0.35), -bb.position.y * s, zz)
-			darken(bld, Color(0.58, 0.52, 0.56))
+			darken(bld, zone["bld"], true)
 			add_child(bld)
 			zz -= rng.randf_range(8.5, 10.5)
 	# wrecked cars on the edges
@@ -363,6 +520,8 @@ func _build_squad() -> void:
 	for i in range(SQUAD_SHOW):
 		var nm: String = SOLDIERS[i % SOLDIERS.size()]
 		var c := make_char("res://assets/soldiers/%s.glb" % nm, 1.8)
+		if i == 0 and str(save["hero"]) != "":
+			c = make_char("res://assets/heroes/%s.glb" % str(save["hero"]), 1.95)
 		c["off"] = Vector3(offs[i].x, 0, offs[i].y)
 		c["logic"].position = c["off"]
 		squad_root.add_child(c["logic"])
@@ -445,10 +604,14 @@ func _build_hud() -> void:
 	boss_box = Control.new()
 	boss_box.visible = false
 	hud.add_child(boss_box)
-	var bl := label("WARROK", 54, Color(1, 0.5, 0.45))
-	bl.position = Vector2(0, 165)
-	bl.size = Vector2(1080, 70)
-	boss_box.add_child(bl)
+	boss_name_lbl = label("WARROK", 54, Color(1, 0.5, 0.45))
+	boss_name_lbl.position = Vector2(0, 165)
+	boss_name_lbl.size = Vector2(1080, 70)
+	boss_box.add_child(boss_name_lbl)
+	lbl_fps = label("", 36, Color(0.7, 1, 0.7))
+	lbl_fps.position = Vector2(20, 1840)
+	lbl_fps.size = Vector2(300, 60)
+	hud.add_child(lbl_fps)
 	boss_bar = ProgressBar.new()
 	boss_bar.position = Vector2(140, 240)
 	boss_bar.size = Vector2(800, 44)
@@ -477,20 +640,32 @@ func _build_hud() -> void:
 	overlay_sub.size = Vector2(960, 260)
 	overlay_sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	overlay.add_child(overlay_sub)
-	var btn := Button.new()
+	var btn := make_button("PLAY", Vector2(290, 1180), Vector2(500, 170), Color(0.2, 0.7, 0.25), 84, _on_btn)
 	btn.name = "Btn"
-	btn.text = "PLAY"
-	btn.position = Vector2(290, 1220)
-	btn.size = Vector2(500, 170)
-	btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", 84)
-	btn.add_theme_color_override("font_color", Color.WHITE)
-	btn.add_theme_color_override("font_outline_color", Color(0.09, 0.06, 0.27))
-	btn.add_theme_constant_override("outline_size", 22)
-	for st in ["normal", "hover", "pressed", "focus"]:
-		btn.add_theme_stylebox_override(st, panel_style(Color(0.2, 0.7, 0.25), 40))
-	btn.pressed.connect(_on_btn)
 	overlay.add_child(btn)
+	var btn2 := make_button("MENU", Vector2(340, 1390), Vector2(400, 130), Color(0.3, 0.35, 0.6), 64, _on_menu_btn)
+	btn2.name = "Btn2"
+	overlay.add_child(btn2)
+
+func make_button(txt: String, pos: Vector2, sz: Vector2, col: Color, fsize: int, cb: Callable) -> Button:
+	var b := Button.new()
+	b.text = txt
+	b.position = pos
+	b.size = sz
+	b.add_theme_font_override("font", font)
+	b.add_theme_font_size_override("font_size", fsize)
+	b.add_theme_color_override("font_color", Color.WHITE)
+	b.add_theme_color_override("font_color_hover", Color.WHITE)
+	b.add_theme_color_override("font_color_pressed", Color.WHITE)
+	b.add_theme_color_override("font_color_disabled", Color(0.7, 0.7, 0.75))
+	b.add_theme_color_override("font_outline_color", Color(0.09, 0.06, 0.27))
+	b.add_theme_constant_override("outline_size", int(fsize * 0.26))
+	for st in ["normal", "hover", "pressed", "focus"]:
+		b.add_theme_stylebox_override(st, panel_style(col, int(sz.y * 0.3)))
+	b.add_theme_stylebox_override("disabled", panel_style(Color(0.25, 0.25, 0.32), int(sz.y * 0.3)))
+	b.pressed.connect(func(): snd("click", -8.0))
+	b.pressed.connect(cb)
+	return b
 
 func show_overlay(title: String, sub: String, btn: String) -> void:
 	overlay_title.text = title
@@ -503,7 +678,203 @@ func _on_btn() -> void:
 	if state == "menu":
 		start_game()
 	else:
+		if state == "win" and btn_is_next:
+			save["zone"] = int(save["zone"]) + 1
+			write_save()
+		Engine.set_meta("autostart", true)
 		get_tree().reload_current_scene()
+
+var btn_is_next := false
+
+func _on_menu_btn() -> void:
+	Engine.set_meta("autostart", false)
+	get_tree().reload_current_scene()
+
+# ---------------------------------------------------------------- menu screens
+func _build_menu() -> void:
+	menu = Control.new()
+	menu.visible = false
+	menu.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hud.add_child(menu)
+	var dim := ColorRect.new()
+	dim.color = Color(0.03, 0.02, 0.1, 0.55)
+	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	menu.add_child(dim)
+	menu_main = Control.new()
+	menu.add_child(menu_main)
+	var t1 := label("TURF WAR", 150, Color(1, 0.9, 0.35))
+	t1.position = Vector2(0, 230)
+	t1.size = Vector2(1080, 170)
+	menu_main.add_child(t1)
+	var t2 := label("MAYHEM", 150, Color(1, 0.45, 0.35))
+	t2.position = Vector2(0, 380)
+	t2.size = Vector2(1080, 170)
+	menu_main.add_child(t2)
+	lbl_menu_coins = label("", 70, Color(1, 0.88, 0.3))
+	lbl_menu_coins.position = Vector2(0, 620)
+	lbl_menu_coins.size = Vector2(1080, 90)
+	menu_main.add_child(lbl_menu_coins)
+	menu_main.add_child(make_button("<", Vector2(60, 930), Vector2(130, 130), Color(0.3, 0.35, 0.6), 80, func(): change_zone(-1)))
+	menu_main.add_child(make_button(">", Vector2(890, 930), Vector2(130, 130), Color(0.3, 0.35, 0.6), 80, func(): change_zone(1)))
+	lbl_zone = label("", 58, Color.WHITE)
+	lbl_zone.position = Vector2(200, 945)
+	lbl_zone.size = Vector2(680, 100)
+	menu_main.add_child(lbl_zone)
+	menu_main.add_child(make_button("PLAY", Vector2(240, 1110), Vector2(600, 190), Color(0.2, 0.7, 0.25), 100, func(): menu.visible = false; start_game()))
+	menu_main.add_child(make_button("UPGRADES", Vector2(80, 1350), Vector2(450, 140), Color(0.85, 0.55, 0.12), 56, func(): show_page("up")))
+	menu_main.add_child(make_button("HEROES", Vector2(550, 1350), Vector2(450, 140), Color(0.55, 0.3, 0.8), 56, func(): show_page("hero")))
+	var qb := make_button("", Vector2(80, 1560), Vector2(450, 100), Color(0.3, 0.35, 0.6), 40, func(): pass)
+	qb.name = "QBtn"
+	qb.pressed.connect(func(): save["quality"] = 1 - int(save["quality"]); write_save(); apply_quality(); refresh_menu())
+	menu_main.add_child(qb)
+	var fb := make_button("", Vector2(550, 1560), Vector2(450, 100), Color(0.3, 0.35, 0.6), 40, func(): pass)
+	fb.name = "FBtn"
+	fb.pressed.connect(func(): save["fps"] = not bool(save["fps"]); write_save(); refresh_menu())
+	menu_main.add_child(fb)
+	menu_up = Control.new()
+	menu_up.visible = false
+	menu.add_child(menu_up)
+	var ut := label("UPGRADES", 110, Color(1, 0.9, 0.35))
+	ut.position = Vector2(0, 220)
+	ut.size = Vector2(1080, 140)
+	menu_up.add_child(ut)
+	var uc := label("", 66, Color(1, 0.88, 0.3))
+	uc.name = "Coins"
+	uc.position = Vector2(0, 370)
+	uc.size = Vector2(1080, 90)
+	menu_up.add_child(uc)
+	var yy := 520
+	for k in UPGRADES.keys():
+		var card := Panel.new()
+		card.add_theme_stylebox_override("panel", panel_style(Color(0.15, 0.12, 0.3, 0.92), 30))
+		card.position = Vector2(60, yy)
+		card.size = Vector2(960, 250)
+		menu_up.add_child(card)
+		var nl := label("", 60, Color.WHITE)
+		nl.name = "N_" + k
+		nl.position = Vector2(90, yy + 20)
+		nl.size = Vector2(560, 90)
+		nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		menu_up.add_child(nl)
+		var dl := label(str(UPGRADES[k]["desc"]), 42, Color(0.8, 0.85, 1))
+		dl.position = Vector2(90, yy + 130)
+		dl.size = Vector2(560, 70)
+		dl.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		menu_up.add_child(dl)
+		var bb := make_button("", Vector2(690, yy + 45), Vector2(300, 160), Color(0.2, 0.7, 0.25), 56, func(): buy_upgrade(k))
+		bb.name = "B_" + k
+		menu_up.add_child(bb)
+		yy += 290
+	menu_up.add_child(make_button("BACK", Vector2(340, 1500), Vector2(400, 130), Color(0.3, 0.35, 0.6), 64, func(): show_page("main")))
+	menu_hero = Control.new()
+	menu_hero.visible = false
+	menu.add_child(menu_hero)
+	var ht := label("HEROES", 110, Color(1, 0.9, 0.35))
+	ht.position = Vector2(0, 220)
+	ht.size = Vector2(1080, 140)
+	menu_hero.add_child(ht)
+	var hc := label("", 66, Color(1, 0.88, 0.3))
+	hc.name = "Coins"
+	hc.position = Vector2(0, 370)
+	hc.size = Vector2(1080, 90)
+	menu_hero.add_child(hc)
+	yy = 500
+	for k in HEROES.keys():
+		var card2 := Panel.new()
+		card2.add_theme_stylebox_override("panel", panel_style(Color(0.15, 0.12, 0.3, 0.92), 30))
+		card2.position = Vector2(60, yy)
+		card2.size = Vector2(960, 200)
+		menu_hero.add_child(card2)
+		var hn := label(str(HEROES[k]["name"]), 56, Color.WHITE)
+		hn.position = Vector2(90, yy + 20)
+		hn.size = Vector2(560, 80)
+		hn.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		menu_hero.add_child(hn)
+		var hp := label(str(HEROES[k]["perk"]), 40, Color(0.8, 0.85, 1))
+		hp.position = Vector2(90, yy + 110)
+		hp.size = Vector2(560, 70)
+		hp.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		menu_hero.add_child(hp)
+		var hb := make_button("", Vector2(690, yy + 30), Vector2(300, 140), Color(0.2, 0.7, 0.25), 50, func(): pick_hero(k))
+		hb.name = "H_" + k
+		menu_hero.add_child(hb)
+		yy += 225
+	menu_hero.add_child(make_button("NO HERO", Vector2(60, 1420), Vector2(440, 120), Color(0.4, 0.3, 0.3), 52, func(): pick_hero("")))
+	menu_hero.add_child(make_button("BACK", Vector2(580, 1420), Vector2(440, 120), Color(0.3, 0.35, 0.6), 60, func(): show_page("main")))
+
+func show_menu() -> void:
+	state = "menu"
+	menu.visible = true
+	count_label.visible = false
+	lbl_weapon.visible = false
+	show_page("main")
+
+func show_page(p: String) -> void:
+	menu_main.visible = p == "main"
+	menu_up.visible = p == "up"
+	menu_hero.visible = p == "hero"
+	refresh_menu()
+
+func refresh_menu() -> void:
+	var c := "COINS: %d" % int(save["coins"])
+	lbl_menu_coins.text = c
+	menu_up.get_node("Coins").text = c
+	menu_hero.get_node("Coins").text = c
+	(menu_main.get_node("QBtn") as Button).text = "QUALITY: " + ("HIGH" if int(save["quality"]) == 1 else "BALANCED")
+	(menu_main.get_node("FBtn") as Button).text = "FPS: " + ("ON" if bool(save["fps"]) else "OFF")
+	for k in UPGRADES.keys():
+		var lv := int(save["up"][k])
+		(menu_up.get_node("N_" + k) as Label).text = "%s  LV %d" % [UPGRADES[k]["name"], lv]
+		var b := menu_up.get_node("B_" + k) as Button
+		b.text = str(upgrade_cost(k))
+		b.disabled = int(save["coins"]) < upgrade_cost(k)
+	for k in HEROES.keys():
+		var hb := menu_hero.get_node("H_" + k) as Button
+		if k in save["heroes"]:
+			hb.text = "ACTIVE" if str(save["hero"]) == k else "SELECT"
+			hb.disabled = str(save["hero"]) == k
+		else:
+			hb.text = str(HEROES[k]["cost"])
+			hb.disabled = int(save["coins"]) < int(HEROES[k]["cost"])
+	lbl_zone.text = "ZONE %d: %s" % [int(save["zone"]) + 1, zone["name"]]
+
+func change_zone(d: int) -> void:
+	var z := clampi(int(save["zone"]) + d, 0, mini(int(save["unlocked"]), ZONES.size() - 1))
+	if z == int(save["zone"]):
+		snd("bad", -6.0)
+		return
+	save["zone"] = z
+	write_save()
+	zone = ZONES[z]
+	apply_zone_look()
+	level = build_level()
+	refresh_menu()
+
+func buy_upgrade(k: String) -> void:
+	var cost := upgrade_cost(k)
+	if int(save["coins"]) < cost:
+		return
+	save["coins"] = int(save["coins"]) - cost
+	save["up"][k] = int(save["up"][k]) + 1
+	write_save()
+	compute_stats()
+	update_squad_visibility()
+	snd("gate", -4.0)
+	refresh_menu()
+
+func pick_hero(k: String) -> void:
+	if k != "" and not (k in save["heroes"]):
+		var cost := int(HEROES[k]["cost"])
+		if int(save["coins"]) < cost:
+			return
+		save["coins"] = int(save["coins"]) - cost
+		save["heroes"].append(k)
+		snd("gate", -4.0)
+	save["hero"] = k
+	write_save()
+	Engine.set_meta("autostart", false)
+	get_tree().reload_current_scene()
 
 func popup(txt: String, col := Color(1, 0.95, 0.4)) -> void:
 	center_msg.text = txt
@@ -516,12 +887,17 @@ func popup(txt: String, col := Color(1, 0.95, 0.4)) -> void:
 # ---------------------------------------------------------------- game flow
 func start_game() -> void:
 	state = "play"
+	lbl_weapon.visible = true
 	dist = 0.0
 	next_event = 0
+	run_coins = 0
+	lbl_coins.text = "0"
+	lbl_weapon.text = WEAPONS[weapon_idx]["name"]
+	update_squad_visibility()
 	if auto_play and OS.get_environment("DZM_START") != "":
 		dist = float(OS.get_environment("DZM_START"))
 		squad_count = int(OS.get_environment("DZM_SQUAD")) if OS.get_environment("DZM_SQUAD") != "" else squad_count
-		while next_event < LEVEL.size() and float(LEVEL[next_event]["d"]) < dist:
+		while next_event < level.size() and float(level[next_event]["d"]) < dist:
 			next_event += 1
 		update_squad_visibility()
 		set_weapon(int(OS.get_environment("DZM_WEAPON")) if OS.get_environment("DZM_WEAPON") != "" else 0)
@@ -533,10 +909,21 @@ func end_game(won: bool) -> void:
 	state = "win" if won else "lose"
 	for c in soldiers:
 		play(c["ap"], "r_idle_aim", 1.0, 0.2)
+	var bonus := 0
+	btn_is_next = false
 	if won:
-		show_overlay("ZONE CLEARED!", "Kills: %d     Coins: %d\nSquad left: %d" % [kills, coins, squad_count], "REPLAY")
+		bonus = 80 + 60 * int(save["zone"])
+		if int(save["zone"]) >= int(save["unlocked"]) and int(save["zone"]) < ZONES.size() - 1:
+			save["unlocked"] = int(save["zone"]) + 1
+		btn_is_next = int(save["zone"]) < int(save["unlocked"])
+	save["coins"] = int(save["coins"]) + run_coins + bonus
+	write_save()
+	snd("win" if won else "lose", -4.0)
+	var btn_txt := "NEXT ZONE" if btn_is_next else ("REPLAY" if won else "RETRY")
+	if won:
+		show_overlay("ZONE CLEARED!", "Kills: %d     Coins: %d  +%d bonus\nSquad left: %d" % [kills, run_coins, bonus, squad_count], btn_txt)
 	else:
-		show_overlay("SQUAD DOWN", "Kills: %d     Coins: %d\nThe horde got through. Try again!" % [kills, coins], "RETRY")
+		show_overlay("SQUAD DOWN", "Kills: %d     Coins: %d\nThe horde got through. Try again!" % [kills, run_coins], btn_txt)
 
 # ---------------------------------------------------------------- input
 func _unhandled_input(event: InputEvent) -> void:
@@ -563,6 +950,8 @@ func queue_event(ev: Dictionary) -> void:
 				var kind: String = ev["kind"]
 				if kind == "mixed":
 					kind = "runner" if i % 3 == 0 else "walker"
+				elif kind == "mixed_bomb":
+					kind = "bomber" if i % 5 == 0 else ("runner" if i % 3 == 0 else "walker")
 				spawn_queue.append({"fn": "zombie", "kind": kind, "z": z - randf_range(0, 9), "x": randf_range(-LANE_HALF + 0.6, LANE_HALF - 0.6), "d": d})
 		"elite":
 			spawn_queue.append({"fn": "zombie", "kind": "elite", "z": z, "x": 0.0, "d": d})
@@ -630,25 +1019,40 @@ func spawn_zombie(job: Dictionary) -> void:
 			spd = randf_range(3.4, 4.2)
 			anim = "z_run"
 			anim_speed = 1.0
+		"bomber":
+			path = "res://assets/zombies/skinless.glb"
+			h = 1.8
+			hp = 45.0
+			spd = 3.0
+			anim = "z_run"
+			anim_speed = 1.0
 		"elite":
-			path = "res://assets/elites/mutant_brute.glb"
+			path = "res://assets/%s.glb" % zone["elite"]
 			h = 2.8
 			hp = 3000.0
 			spd = 1.5
 			dmg = 3.0
 		"boss":
-			path = "res://assets/bosses/warrok.glb"
-			h = 4.4
-			hp = 30000.0
+			path = "res://assets/%s.glb" % zone["boss"]
+			h = float(zone["boss_h"])
+			hp = float(zone["boss_hp"])
 			spd = 2.4
 			dmg = 6.0
+	if kind != "boss":
+		hp *= float(zone["hpm"])
 	var c := make_char(path, h)
+	if kind == "bomber":
+		darken(c["model"], Color(1.7, 0.55, 0.45))
+	else:
+		for mi in (c["model"] as Node).find_children("*", "MeshInstance3D", true, false):
+			(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	(c["ap"] as AnimationPlayer).callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	var logic: Node3D = c["logic"]
 	add_child(logic)
 	logic.position = Vector3(job["x"], 0, job["z"])
 	logic.rotation.y = 0.0
 	var z := {"c": c, "logic": logic, "ap": c["ap"], "hp": hp, "maxhp": hp, "spd": spd, "anim": anim, "anim_speed": anim_speed, "dmg": dmg, "kind": kind,
-		"state": "idle", "atk_t": 0.0, "dead_t": 0.0, "radius": 0.7 if kind != "boss" else 2.0, "h": h, "off": randf() * 6.0}
+		"state": "idle", "atk_t": 0.0, "dead_t": 0.0, "acc": 0.0, "radius": 0.7 if kind != "boss" else 2.0, "h": h, "off": randf() * 6.0}
 	play(c["ap"], "z_idle", randf_range(0.8, 1.2), 0.0)
 	if c["ap"].has_animation("z_idle"):
 		c["ap"].seek(randf() * 3.0, true)
@@ -726,6 +1130,30 @@ func update_tracers(delta: float) -> void:
 			tracers.remove_at(i)
 		i -= 1
 
+func flash(pos: Vector3, col: Color) -> void:
+	var mi := MeshInstance3D.new()
+	var sm := SphereMesh.new()
+	sm.radius = 0.13
+	sm.height = 0.26
+	mi.mesh = sm
+	var m := mat(col, 0.3, 4.0)
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mi)
+	mi.global_position = pos
+	get_tree().create_timer(0.05).timeout.connect(mi.queue_free)
+
+func explode_at(pos: Vector3, self_z: Dictionary) -> void:
+	snd("boom", -4.0, randf_range(0.9, 1.1))
+	blood(pos + Vector3(0, 1.0, 0), true)
+	float_text(pos + Vector3(0, 2.4, 0), "BOOM!", Color(1, 0.6, 0.2))
+	for z in zombies:
+		if z != self_z and z["state"] != "dead":
+			var dp: Vector3 = (z["logic"] as Node3D).global_position - pos
+			if dp.length() < 3.4:
+				damage_zombie(z, 80.0)
+
 func blood(pos: Vector3, big := false) -> void:
 	var p := CPUParticles3D.new()
 	p.emitting = true
@@ -777,6 +1205,7 @@ func change_squad(delta_n: int, pos: Vector3, txt := "", col := Color(1, 0.9, 0.
 
 func apply_gate(side: Dictionary) -> void:
 	var p := squad_root.global_position + Vector3(0, 3.6, 0)
+	snd("bad" if side["k"] == "sub" else "gate", -4.0)
 	match side["k"]:
 		"add":
 			change_squad(side["v"], p, "+%d" % side["v"], Color(0.5, 0.8, 1))
@@ -820,14 +1249,18 @@ func damage_zombie(z: Dictionary, amount: float) -> void:
 		z["state"] = "dead"
 		kills += 1
 		var pts: int = 1 if z["kind"] in ["walker", "runner"] else (15 if z["kind"] == "elite" else 100)
-		coins += pts
-		lbl_coins.text = str(coins)
+		run_coins += pts
+		lbl_coins.text = str(run_coins)
 		var lp := (z["logic"] as Node3D).global_position
 		blood(lp + Vector3(0, 1.2, 0), z["kind"] in ["elite", "boss"])
+		snd("zdie", -10.0, randf_range(0.85, 1.15))
 		play(z["ap"], "z_death" if randf() < 0.5 else "z_dying", 1.0, 0.1)
+		if z["kind"] == "bomber":
+			explode_at(lp, z)
 		z["dead_t"] = 0.0
 		if z == boss:
 			boss_box.visible = false
+			snd("boom", -2.0, 0.7)
 			popup("BOSS DOWN!", Color(1, 0.6, 0.3))
 			get_tree().create_timer(2.2).timeout.connect(func(): end_game(true))
 		elif pts > 1:
@@ -836,6 +1269,10 @@ func damage_zombie(z: Dictionary, amount: float) -> void:
 # ---------------------------------------------------------------- main loop
 func _process(delta: float) -> void:
 	elapsed += delta
+	perf_acc += delta
+	if perf_acc > 0.5:
+		perf_acc = 0.0
+		lbl_fps.text = ("FPS %d" % int(Engine.get_frames_per_second())) if bool(save["fps"]) else ""
 	if auto_play:
 		_autoplay_step(delta)
 	# camera follow (also in menu)
@@ -851,8 +1288,8 @@ func _process(delta: float) -> void:
 		return
 
 	# spawn queue + events
-	while next_event < LEVEL.size() and float(LEVEL[next_event]["d"]) - dist < SPAWN_AHEAD:
-		queue_event(LEVEL[next_event])
+	while next_event < level.size() and float(level[next_event]["d"]) - dist < SPAWN_AHEAD:
+		queue_event(level[next_event])
 		next_event += 1
 	var budget := 3
 	while budget > 0 and spawn_queue.size() > 0:
@@ -903,15 +1340,18 @@ func _process(delta: float) -> void:
 	# firing
 	fire_t -= delta
 	if fire_t <= 0.0 and not tgt.is_empty():
-		fire_t = float(w["rate"])
+		fire_t = float(w["rate"]) / rate_mult
 		var shown := mini(squad_count, SQUAD_SHOW)
-		var per_shot: float = float(w["dmg"]) * (float(squad_count) / float(maxi(shown, 1)))
+		var per_shot: float = float(w["dmg"]) * dmg_mult * (float(squad_count) / float(maxi(shown, 1)))
+		snd("shot", -14.0, randf_range(0.9, 1.2))
 		var tp: Vector3 = (tgt["logic"] as Node3D).global_position + Vector3(0, tgt["h"] * 0.6, 0)
 		var hit_n := 0
 		for i in range(shown):
 			var c: Dictionary = soldiers[i]
 			var from: Vector3 = (c["logic"] as Node3D).global_position + Vector3(0.25, 1.35, -0.9)
 			add_tracer(from, tp + Vector3(randf_range(-0.2, 0.2), randf_range(-0.2, 0.2), 0), w["col"])
+			if i < 4:
+				flash(from + Vector3(0, 0, -0.1), w["col"])
 			hit_n += 1
 		damage_zombie(tgt, per_shot * float(hit_n))
 		# splash so hordes thin out (squad is a crowd, bullets spray)
@@ -956,6 +1396,7 @@ func _process(delta: float) -> void:
 		var lg: Node3D = z["logic"]
 		if z["state"] == "dead":
 			z["dead_t"] += delta
+			(z["ap"] as AnimationPlayer).advance(delta)
 			if z["dead_t"] > 3.0:
 				lg.queue_free()
 				zombies.remove_at(i2)
@@ -971,6 +1412,11 @@ func _process(delta: float) -> void:
 				i2 -= 1
 				continue
 		if z["state"] == "chase" or z["state"] == "attack":
+			z["acc"] += delta
+			var far_z: bool = dlen > 22.0
+			if not far_z or z["acc"] >= 0.07:
+				(z["ap"] as AnimationPlayer).advance(z["acc"])
+				z["acc"] = 0.0
 			var reach: float = 1.3 + float(z["radius"])
 			if dlen > reach and not (z["kind"] == "boss" and lg.position.z > squad_p.z + 1.0):
 				var dirv := to / maxf(dlen, 0.001)
@@ -979,6 +1425,13 @@ func _process(delta: float) -> void:
 				if z["state"] == "attack":
 					z["state"] = "chase"
 					play(z["ap"], z["anim"], float(z["anim_speed"]), 0.2)
+			elif dlen <= reach and z["kind"] == "bomber":
+				z["state"] = "dead"
+				z["dead_t"] = 99.0
+				lg.visible = false
+				explode_at(lg.global_position, z)
+				shake = 0.35
+				change_squad(-6, squad_root.global_position + Vector3(0, 3.8, 0), "-6", Color(1, 0.35, 0.35))
 			elif dlen <= reach:
 				if z["state"] != "attack":
 					z["state"] = "attack"
@@ -988,7 +1441,7 @@ func _process(delta: float) -> void:
 					z["atk_t"] = 0.0
 					var loss := int(z["dmg"]) if squad_count > 12 else 1
 					if z["kind"] == "boss":
-						loss = maxi(3, int(squad_count * 0.08))
+						loss = maxi(3, int(float(squad_count) * 0.08 * boss_resist))
 						shake = 0.35
 					blood(squad_root.global_position + Vector3(randf_range(-1, 1), 1.2, 0), false)
 					change_squad(-loss, squad_root.global_position + Vector3(0, 3.8, 0), "-%d" % loss, Color(1, 0.35, 0.35))
@@ -1001,7 +1454,8 @@ func _process(delta: float) -> void:
 	if not boss.is_empty() and boss["state"] == "idle" and dist > LEVEL_LEN - 62.0:
 		boss["state"] = "chase"
 		play(boss["ap"], "z_scream", 1.0, 0.1)
-		popup("WARROK!", Color(1, 0.4, 0.35))
+		snd("roar", -2.0, 0.8)
+		popup(str(zone["boss_name"]) + "!", Color(1, 0.4, 0.35))
 		get_tree().create_timer(2.4).timeout.connect(func(): if not boss.is_empty() and boss["state"] == "chase": play(boss["ap"], "z_walk", 0.9, 0.3))
 		boss_box.visible = true
 		boss_bar.max_value = boss["maxhp"]

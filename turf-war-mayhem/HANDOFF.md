@@ -6,12 +6,12 @@ but a different game: gritty city, real soldiers, Mixamo zombies, guns, Warrok b
 ## Run it
 Open this folder in Godot 4.4.x, press Play. First open takes a minute to import. Drag left/right to steer.
 
-## What works now (first playable, Zone 1)
-- Squad auto-runs and auto-fires. Shows up to 9 soldiers; the big number is the real squad size.
-- Gates: +N, xN, -N, weapon upgrade (pistol, SMG, rifle, bullpup). Pass through the side you steer to.
-- Caged survivors: steer next to them for +6 soldiers.
-- Zombies (walkers + fast runners), elite mutant, boss Warrok with HP bar. Coins per kill.
-- Win / lose screens with replay.
+## What works now
+- Main menu: zone picker (3 zones: Downtown, Night Shift, The Fog; each unlocks after beating the one before), Play, Upgrades, Heroes, Quality (High = 3D up to ~1440p, Balanced = ~1080p) and an FPS counter toggle.
+- Squad auto-runs and auto-fires; gates (+, x, -, new gun), caged survivors, walkers, runners, exploding zombies (zones 2-3), elites, a boss per zone with HP bar.
+- Coins saved on the phone (user://turf_war_mayhem.json). Upgrades: damage, start squad, fire rate. Heroes (bought with coins): Hazmat +15% damage, Captain +4 squad, Red Agent +12% fire rate, Brawler takes 30% less boss damage. The hero leads the squad.
+- Sound effects (Kenney, CC0) and win/lose jingles. Muzzle flashes, tracers, blood, camera shake.
+- Performance: zombies cast no shadows, far zombies animate at a lower rate, sleeping zombies are frozen until the squad is near, 3D resolution capped, 60 FPS cap.
 
 ## Files
 - scripts/main.gd: whole game (level list is the LEVEL constant at the top; edit distances and counts).
@@ -19,8 +19,8 @@ Open this folder in Godot 4.4.x, press Play. First open takes a minute to import
 - Test without a phone: `DZM_SHOTS=/tmp/shots DZM_TIMES=20,60 godot --path . --fixed-fps 30` autoplays and saves screenshots.
 
 ## Next steps (in order)
-1. Tune Zone 1 balance on a real phone; check frame rate with 40+ zombies.
-2. Hero select screen (heroes folder) and weapon/upgrade shop with coins.
+1. Test on a real phone: turn FPS ON in the menu and report the numbers with 30+ zombies. Zone 2 and 3 boss HP and horde sizes are guesses and need tuning.
+2. More weapons (shotgun, sniper are converted but unused), hero special skills, daily rewards, missions, tutorial.
 3. Merge base between zones (shared idea with Squad Mayhem, different look).
 4. More zones: other elites/bosses (pumpkin_hulk, moose_beast, blade_mutant), night level, rain.
 5. Sound (Kenney audio is in asset-library/kenney-audio), ads (rewarded only), Android export and signing (owner does signing).
