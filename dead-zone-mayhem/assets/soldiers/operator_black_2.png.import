@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://yd3353j7hs8l"
+path="res://.godot/imported/operator_black_2.png-a0f3aa89f4722ed5726a0a6d1e898bfd.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "25510ac246911a0a9042b996f3e31e61"
+}
+
+[deps]
+
+source_file="res://assets/soldiers/operator_black_2.png"
+dest_files=["res://.godot/imported/operator_black_2.png-a0f3aa89f4722ed5726a0a6d1e898bfd.ctex"]
+
+[params]
+
+compress/mode=0
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=1

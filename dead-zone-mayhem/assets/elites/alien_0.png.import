@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://bjlsi6s24yara"
+path="res://.godot/imported/alien_0.png-f383946ada266c1f39fa31f9f7350b4d.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "579e5b15200eb32efd59606fb31f4cb8"
+}
+
+[deps]
+
+source_file="res://assets/elites/alien_0.png"
+dest_files=["res://.godot/imported/alien_0.png-f383946ada266c1f39fa31f9f7350b4d.ctex"]
+
+[params]
+
+compress/mode=0
+compress/high_quality=false
+compress/lossy_quality=0.7
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=1
