@@ -45,6 +45,7 @@ export async function makeEngine(opt={}){
   E.hud=(html)=>{document.getElementById('hud').innerHTML=html;};
   E.labels=[];
   E.label=(text,p,css='')=>{E.labels.push({text,p,css});};
+  E.raw=(html,p,css='')=>{E.labels.push({text:html,p,css,raw:true});};
   E.ribbon=(pts,width,color,y=0.01,o={})=>{const c=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(p[0],0,p[1])));
     const N=o.n||120;const pos=[],idx=[];for(let i=0;i<=N;i++){const t=i/N;const p=c.getPoint(t);const tg=c.getTangent(t);const nx=-tg.z,nz=tg.x;
       pos.push(p.x+nx*width/2,y,p.z+nz*width/2,p.x-nx*width/2,y,p.z-nz*width/2);if(i<N){const a=i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}}
@@ -60,7 +61,7 @@ export async function makeEngine(opt={}){
     grp.position.set(o.x||0,o.y||0,o.z||0);grp.rotation.set(o.rx||0,o.ry||0,o.rz||0);scene.add(grp);return grp;};
   E.done=async()=>{await new Promise(r=>setTimeout(r,400));cam.updateMatrixWorld();r.render(scene,cam);r.render(scene,cam);
     const hud=document.getElementById('hud');for(const l of E.labels){const v=new THREE.Vector3(...l.p).project(cam);const x=(v.x*0.5+0.5)*W,y=(-v.y*0.5+0.5)*H;
-      const d=document.createElement('div');d.style.cssText='position:absolute;transform:translate(-50%,-50%);white-space:nowrap;left:'+x+'px;top:'+y+'px;'+l.css;d.className='stroke';d.innerHTML=l.text;hud.appendChild(d);}
+      const d=document.createElement('div');d.style.cssText='position:absolute;transform:translate(-50%,-50%);white-space:nowrap;left:'+x+'px;top:'+y+'px;'+l.css;d.className=l.raw?'':'t';d.innerHTML=l.text;hud.appendChild(d);}
     window.__done=true;};
   return E;
 }
