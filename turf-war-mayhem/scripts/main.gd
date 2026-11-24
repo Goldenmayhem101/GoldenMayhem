@@ -25,14 +25,17 @@ const RUNNERS := ["girl", "skinless", "stalker", "ragged"]
 const CIVILIANS := ["scientist_a", "scientist_b", "hazmat_white", "survivor_woman"]
 
 const ZONES := [
-	{"name": "DOWNTOWN", "sky_top": Color(0.07, 0.06, 0.2), "sky_hor": Color(0.95, 0.5, 0.28), "fog": Color(0.32, 0.2, 0.26), "fog_d": 0.009,
-	 "amb": Color(0.5, 0.46, 0.6), "bld": Color(0.58, 0.52, 0.56), "boss": "bosses/warrok", "boss_name": "WARROK", "boss_h": 4.4, "boss_hp": 30000.0,
+	{"name": "DOWNTOWN", "sky_top": Color(0.22, 0.52, 0.95), "sky_hor": Color(0.78, 0.9, 1.0), "fog": Color(0.78, 0.89, 1.0), "fog_d": 0.004,
+	 "amb": Color(1.0, 1.0, 1.0), "bld": Color(1.0, 1.0, 1.0), "grass": Color(0.36, 0.72, 0.26), "road": Color(0.22, 0.22, 0.27),
+	 "boss": "bosses/warrok", "boss_name": "WARROK", "boss_h": 5.4, "boss_hp": 30000.0,
 	 "elite": "elites/mutant_brute", "hpm": 1.0, "nm": 1.0, "bombers": false},
-	{"name": "NIGHT SHIFT", "sky_top": Color(0.01, 0.02, 0.08), "sky_hor": Color(0.12, 0.14, 0.3), "fog": Color(0.05, 0.07, 0.14), "fog_d": 0.012,
-	 "amb": Color(0.3, 0.36, 0.62), "bld": Color(0.4, 0.45, 0.62), "boss": "bosses/pumpkin_hulk", "boss_name": "PUMPKIN HULK", "boss_h": 4.6, "boss_hp": 80000.0,
+	{"name": "DUSK DISTRICT", "sky_top": Color(0.35, 0.25, 0.65), "sky_hor": Color(1.0, 0.62, 0.42), "fog": Color(0.85, 0.58, 0.55), "fog_d": 0.004,
+	 "amb": Color(1.0, 0.88, 0.92), "bld": Color(1.0, 0.88, 0.88), "grass": Color(0.3, 0.55, 0.32), "road": Color(0.2, 0.18, 0.24),
+	 "boss": "bosses/pumpkin_hulk", "boss_name": "PUMPKIN HULK", "boss_h": 5.6, "boss_hp": 80000.0,
 	 "elite": "elites/alien", "hpm": 1.4, "nm": 1.3, "bombers": true},
-	{"name": "THE FOG", "sky_top": Color(0.18, 0.2, 0.22), "sky_hor": Color(0.55, 0.58, 0.55), "fog": Color(0.45, 0.48, 0.46), "fog_d": 0.02,
-	 "amb": Color(0.62, 0.64, 0.62), "bld": Color(0.6, 0.62, 0.6), "boss": "bosses/moose_beast", "boss_name": "MOOSE BEAST", "boss_h": 5.0, "boss_hp": 120000.0,
+	{"name": "THE FOG", "sky_top": Color(0.55, 0.64, 0.74), "sky_hor": Color(0.88, 0.9, 0.92), "fog": Color(0.86, 0.89, 0.92), "fog_d": 0.016,
+	 "amb": Color(0.95, 0.98, 1.0), "bld": Color(0.9, 0.96, 1.0), "grass": Color(0.5, 0.64, 0.5), "road": Color(0.34, 0.36, 0.4),
+	 "boss": "bosses/moose_beast", "boss_name": "MOOSE BEAST", "boss_h": 6.0, "boss_hp": 120000.0,
 	 "elite": "elites/war_zombie", "hpm": 1.9, "nm": 1.6, "bombers": true},
 ]
 const HEROES := {
@@ -70,6 +73,8 @@ var zone: Dictionary = {}
 var run_coins := 0
 var bld_mats: Array = []
 var env: Environment
+var road_mat: StandardMaterial3D
+var grass_mat: StandardMaterial3D
 var sky_mat: ProceduralSkyMaterial
 var sfx_players: Array = []
 var sfx_streams := {}
@@ -216,7 +221,9 @@ func apply_quality() -> void:
 	get_viewport().scaling_3d_scale = sc
 
 func _setup_audio() -> void:
-	for n in ["shot", "hit", "zdie", "boom", "roar", "gate", "click", "bad", "win", "lose"]:
+	for n in ["shot1", "shot2", "shot3", "zdie", "boom", "roar"]:
+		sfx_streams[n] = load("res://assets/audio/%s.wav" % n)
+	for n in ["hit", "gate", "click", "bad", "win", "lose"]:
 		sfx_streams[n] = load("res://assets/audio/%s.ogg" % n)
 	for i in range(10):
 		var p := AudioStreamPlayer.new()
@@ -290,6 +297,21 @@ func lib_for(skel_path: String, prefix: String) -> AnimationLibrary:
 	lib_cache[key] = out
 	return out
 
+var bright_done := {}
+func brighten_once(path: String, model: Node3D) -> void:
+	if bright_done.has(path):
+		return
+	bright_done[path] = true
+	var f := 1.55 if not path.contains("/bosses/") else 1.35
+	for mi in model.find_children("*", "MeshInstance3D", true, false):
+		var m: MeshInstance3D = mi
+		if m.mesh == null:
+			continue
+		for i in range(m.mesh.get_surface_count()):
+			var sm := m.mesh.surface_get_material(i)
+			if sm is BaseMaterial3D:
+				(sm as BaseMaterial3D).albedo_color = Color(f, f, f)
+
 ## Builds a character: returns {logic, model, ap, skel, prefix, h}
 func make_char(path: String, height: float) -> Dictionary:
 	var model: Node3D = load_scene(path).instantiate()
@@ -298,6 +320,7 @@ func make_char(path: String, height: float) -> Dictionary:
 	logic.add_child(holder)
 	holder.add_child(model)
 	holder.rotation.y = PI  # mixamo models face +Z, our "forward" is -Z
+	brighten_once(path, model)
 	var b := model_bounds(model)
 	var s: float = height / maxf(b.size.y, 0.01)
 	holder.scale = Vector3.ONE * s
@@ -362,32 +385,32 @@ func _build_environment() -> void:
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.5, 0.46, 0.6)
-	env.ambient_light_energy = 0.85
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.ambient_light_energy = 0.8
+	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	env.tonemap_exposure = 1.0
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.32, 0.2, 0.26)
 	env.fog_density = 0.009
 	env.glow_enabled = true
-	env.glow_intensity = 0.8
+	env.glow_intensity = 0.6
 	env.glow_bloom = 0.1
 	we.environment = env
 	self.env = env
 	add_child(we)
 	sun = DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-55, 150, 0)
-	sun.light_color = Color(1, 0.7, 0.5)
-	sun.light_energy = 1.25
+	sun.light_color = Color(1, 0.95, 0.85)
+	sun.light_energy = 1.7
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 26.0
 	add_child(sun)
 	var fill := DirectionalLight3D.new()
 	fill.rotation_degrees = Vector3(-30, -30, 0)
 	fill.light_color = Color(0.5, 0.6, 1.0)
-	fill.light_energy = 0.45
+	fill.light_energy = 0.35
 	add_child(fill)
 	cam = Camera3D.new()
-	cam.fov = 58
+	cam.fov = 62
 	cam.far = 220
 	add_child(cam)
 	cam.current = true
@@ -399,6 +422,8 @@ func apply_zone_look() -> void:
 	env.fog_light_color = zone["fog"]
 	env.fog_density = zone["fog_d"]
 	env.ambient_light_color = zone["amb"]
+	road_mat.albedo_color = zone["road"]
+	grass_mat.albedo_color = zone["grass"]
 	for m in bld_mats:
 		(m as BaseMaterial3D).albedo_color = zone["bld"]
 	if lbl_zone:
@@ -436,14 +461,16 @@ func _build_road() -> void:
 	var pm := PlaneMesh.new()
 	pm.size = Vector2(LANE_HALF * 2 + 3.0, LEVEL_LEN + 160.0)
 	road.mesh = pm
-	road.material_override = mat(Color(0.12, 0.12, 0.14))
+	road_mat = mat(Color(0.3, 0.3, 0.35), 0.8)
+	road.material_override = road_mat
 	road.position = Vector3(0, 0, -LEVEL_LEN / 2.0 + 30.0)
 	add_child(road)
 	var ground := MeshInstance3D.new()
 	var gm := PlaneMesh.new()
 	gm.size = Vector2(160, LEVEL_LEN + 200.0)
 	ground.mesh = gm
-	ground.material_override = mat(Color(0.06, 0.055, 0.07))
+	grass_mat = mat(Color(0.36, 0.72, 0.26), 0.9)
+	ground.material_override = grass_mat
 	ground.position = Vector3(0, -0.04, -LEVEL_LEN / 2.0 + 30.0)
 	add_child(ground)
 	# sidewalks
@@ -452,16 +479,16 @@ func _build_road() -> void:
 		var bm := BoxMesh.new()
 		bm.size = Vector3(2.6, 0.25, LEVEL_LEN + 160.0)
 		sw.mesh = bm
-		sw.material_override = mat(Color(0.16, 0.15, 0.17))
+		sw.material_override = mat(Color(0.82, 0.8, 0.74))
 		sw.position = Vector3(sx * (LANE_HALF + 2.3), 0.1, -LEVEL_LEN / 2.0 + 30.0)
 		add_child(sw)
 	# dashed centre line
-	var dash_mat := mat(Color(0.9, 0.8, 0.3))
+	var dash_mat := mat(Color(0.97, 0.97, 0.9))
 	var z := 20.0
 	while z > -LEVEL_LEN - 40.0:
 		var d := MeshInstance3D.new()
 		var dm := BoxMesh.new()
-		dm.size = Vector3(0.18, 0.02, 2.2)
+		dm.size = Vector3(0.3, 0.02, 2.6)
 		d.mesh = dm
 		d.material_override = dash_mat
 		d.position = Vector3(0, 0.02, z)
@@ -514,14 +541,14 @@ func _build_squad() -> void:
 	count_label.outline_modulate = Color(0.09, 0.06, 0.27)
 	count_label.modulate = Color(1, 0.95, 0.4)
 	count_label.no_depth_test = true
-	count_label.position = Vector3(0, 3.1, 0.6)
+	count_label.position = Vector3(0, 3.6, 0.6)
 	squad_root.add_child(count_label)
-	var offs := [Vector2(0, 0), Vector2(-1.0, 0.9), Vector2(1.0, 0.9), Vector2(0, 1.8), Vector2(-1.9, 1.7), Vector2(1.9, 1.7), Vector2(-1.0, 2.7), Vector2(1.0, 2.7), Vector2(0, 3.6)]
+	var offs := [Vector2(0, 0), Vector2(-1.15, 1.0), Vector2(1.15, 1.0), Vector2(0, 2.0), Vector2(-2.2, 2.0), Vector2(2.2, 2.0), Vector2(-1.15, 3.0), Vector2(1.15, 3.0), Vector2(0, 4.0)]
 	for i in range(SQUAD_SHOW):
 		var nm: String = SOLDIERS[i % SOLDIERS.size()]
-		var c := make_char("res://assets/soldiers/%s.glb" % nm, 1.8)
+		var c := make_char("res://assets/soldiers/%s.glb" % nm, 2.15)
 		if i == 0 and str(save["hero"]) != "":
-			c = make_char("res://assets/heroes/%s.glb" % str(save["hero"]), 1.95)
+			c = make_char("res://assets/heroes/%s.glb" % str(save["hero"]), 2.35)
 		c["off"] = Vector3(offs[i].x, 0, offs[i].y)
 		c["logic"].position = c["off"]
 		squad_root.add_child(c["logic"])
@@ -970,11 +997,11 @@ func spawn_gate(d: float, l: Dictionary, r: Dictionary) -> void:
 			col = Color(1.0, 0.75, 0.15)
 		var panel := MeshInstance3D.new()
 		var bm := BoxMesh.new()
-		bm.size = Vector3(LANE_HALF - 0.15, 3.0, 0.2)
+		bm.size = Vector3(LANE_HALF - 0.15, 3.4, 0.25)
 		panel.mesh = bm
 		var m := mat(col, 0.4, 0.5)
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		m.albedo_color = Color(col.r, col.g, col.b, 0.5)
+		m.albedo_color = Color(col.r, col.g, col.b, 0.7)
 		panel.material_override = m
 		panel.position = Vector3((-1 if si == 0 else 1) * LANE_HALF / 2.0, 1.5, -d)
 		add_child(panel)
@@ -1009,26 +1036,26 @@ func spawn_zombie(job: Dictionary) -> void:
 	match kind:
 		"walker":
 			path = "res://assets/zombies/%s.glb" % WALKERS[randi() % WALKERS.size()]
-			h = randf_range(1.7, 1.95)
+			h = randf_range(2.35, 2.7)
 			hp = 90.0
 			spd = randf_range(1.5, 2.1)
 		"runner":
 			path = "res://assets/zombies/%s.glb" % RUNNERS[randi() % RUNNERS.size()]
-			h = randf_range(1.6, 1.8)
+			h = randf_range(2.2, 2.5)
 			hp = 60.0
 			spd = randf_range(3.4, 4.2)
 			anim = "z_run"
 			anim_speed = 1.0
 		"bomber":
 			path = "res://assets/zombies/skinless.glb"
-			h = 1.8
+			h = 2.4
 			hp = 45.0
 			spd = 3.0
 			anim = "z_run"
 			anim_speed = 1.0
 		"elite":
 			path = "res://assets/%s.glb" % zone["elite"]
-			h = 2.8
+			h = 3.7
 			hp = 3000.0
 			spd = 1.5
 			dmg = 3.0
@@ -1042,7 +1069,7 @@ func spawn_zombie(job: Dictionary) -> void:
 		hp *= float(zone["hpm"])
 	var c := make_char(path, h)
 	if kind == "bomber":
-		darken(c["model"], Color(1.7, 0.55, 0.45))
+		darken(c["model"], Color(2.4, 0.8, 0.6))
 	else:
 		for mi in (c["model"] as Node).find_children("*", "MeshInstance3D", true, false):
 			(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -1052,7 +1079,7 @@ func spawn_zombie(job: Dictionary) -> void:
 	logic.position = Vector3(job["x"], 0, job["z"])
 	logic.rotation.y = 0.0
 	var z := {"c": c, "logic": logic, "ap": c["ap"], "hp": hp, "maxhp": hp, "spd": spd, "anim": anim, "anim_speed": anim_speed, "dmg": dmg, "kind": kind,
-		"state": "idle", "atk_t": 0.0, "dead_t": 0.0, "acc": 0.0, "radius": 0.7 if kind != "boss" else 2.0, "h": h, "off": randf() * 6.0}
+		"state": "idle", "atk_t": 0.0, "dead_t": 0.0, "acc": 0.0, "radius": 0.9 if kind != "boss" else 2.4, "h": h, "off": randf() * 6.0}
 	play(c["ap"], "z_idle", randf_range(0.8, 1.2), 0.0)
 	if c["ap"].has_animation("z_idle"):
 		c["ap"].seek(randf() * 3.0, true)
@@ -1109,7 +1136,7 @@ func add_tracer(from: Vector3, to: Vector3, col: Color) -> void:
 	var mi := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	var len := from.distance_to(to)
-	bm.size = Vector3(0.035, 0.035, minf(len, 0.7))
+	bm.size = Vector3(0.07, 0.07, minf(len, 1.1))
 	mi.mesh = bm
 	var m := mat(col, 0.3, 3.0)
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -1277,11 +1304,11 @@ func _process(delta: float) -> void:
 		_autoplay_step(delta)
 	# camera follow (also in menu)
 	var cz: float = squad_root.position.z
-	var want := Vector3(squad_x * 0.45, 7.2 + shake * 0.5 * sin(elapsed * 60.0), cz + 9.6)
+	var want := Vector3(squad_x * 0.45, 6.4 + shake * 0.5 * sin(elapsed * 60.0), cz + 8.6)
 	cam.position = cam.position.lerp(want, clampf(delta * 6.0, 0.0, 1.0))
 	if cam.position.distance_to(want) > 30.0:
 		cam.position = want
-	cam.look_at(Vector3(squad_x * 0.35, 0.8, cz - 8.0), Vector3.UP)
+	cam.look_at(Vector3(squad_x * 0.35, 1.0, cz - 7.5), Vector3.UP)
 	shake = maxf(0.0, shake - delta)
 	update_tracers(delta)
 	if state != "play":
@@ -1343,7 +1370,7 @@ func _process(delta: float) -> void:
 		fire_t = float(w["rate"]) / rate_mult
 		var shown := mini(squad_count, SQUAD_SHOW)
 		var per_shot: float = float(w["dmg"]) * dmg_mult * (float(squad_count) / float(maxi(shown, 1)))
-		snd("shot", -14.0, randf_range(0.9, 1.2))
+		snd("shot%d" % (1 + randi() % 3), -9.0, randf_range(0.92, 1.1) * (1.1 if weapon_idx == 1 else (0.9 if weapon_idx == 3 else 1.0)))
 		var tp: Vector3 = (tgt["logic"] as Node3D).global_position + Vector3(0, tgt["h"] * 0.6, 0)
 		var hit_n := 0
 		for i in range(shown):
@@ -1381,7 +1408,8 @@ func _process(delta: float) -> void:
 		if dist >= -float(cg["z"]) - 0.5 and absf(squad_x - float(cg["x"])) < 2.4:
 			cg["done"] = true
 			(cg["cage"] as Node3D).queue_free()
-			change_squad(6, squad_root.global_position + Vector3(0, 3.6, 0), "RESCUED +6", Color(0.5, 1, 0.6))
+			change_squad(6, squad_root.global_position)
+			popup("RESCUED +6", Color(0.5, 1, 0.6))
 			play(cg["c"]["ap"], "r_run", 1.0, 0.1)
 			var lg: Node3D = cg["logic"]
 			var tw := create_tween()
