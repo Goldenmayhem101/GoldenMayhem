@@ -4,7 +4,8 @@ extends Node3D
 ## rescues survivors, fights zombies and a boss. Everything is built from code + the GLB files in assets/.
 
 const LANE_HALF := 3.3
-const SQUAD_SHOW := 9
+const CROWD_MAX := 120
+const CROWD_SCALE := 1.0
 const RUN_SPEED := 4.4
 const MAX_SQUAD := 400
 const SPAWN_AHEAD := 75.0
@@ -111,7 +112,16 @@ var shake := 0.0
 var elapsed := 0.0
 
 var squad_root: Node3D
-var soldiers: Array = []     # {logic, ap, gun, skel, prefix, off}
+var soldiers: Array = []     # only the detailed hero lives here
+var crowd_mm: MultiMesh
+var crowd_sh_mm: MultiMesh
+var crowd_mat: ShaderMaterial
+var crowd_pos := PackedVector3Array()
+var crowd_app := PackedFloat32Array()
+var zombie_variants: Array = []
+var bomber_mesh: ArrayMesh
+var shadow_mat: StandardMaterial3D
+var shadow_mesh: PlaneMesh
 var count_label: Label3D
 var cam: Camera3D
 var zombies: Array = []
@@ -535,34 +545,109 @@ func _build_squad() -> void:
 	count_label = Label3D.new()
 	count_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	count_label.font = font
-	count_label.font_size = 140
-	count_label.pixel_size = 0.0075
-	count_label.outline_size = 36
+	count_label.font_size = 150
+	count_label.pixel_size = 0.0085
+	count_label.outline_size = 40
 	count_label.outline_modulate = Color(0.09, 0.06, 0.27)
 	count_label.modulate = Color(1, 0.95, 0.4)
 	count_label.no_depth_test = true
-	count_label.position = Vector3(0, 3.6, 0.6)
+	count_label.position = Vector3(0, 4.0, 1.2)
 	squad_root.add_child(count_label)
-	var offs := [Vector2(0, 0), Vector2(-1.15, 1.0), Vector2(1.15, 1.0), Vector2(0, 2.0), Vector2(-2.2, 2.0), Vector2(2.2, 2.0), Vector2(-1.15, 3.0), Vector2(1.15, 3.0), Vector2(0, 4.0)]
-	for i in range(SQUAD_SHOW):
-		var nm: String = SOLDIERS[i % SOLDIERS.size()]
-		var c := make_char("res://assets/soldiers/%s.glb" % nm, 2.15)
-		if i == 0 and str(save["hero"]) != "":
-			c = make_char("res://assets/heroes/%s.glb" % str(save["hero"]), 2.35)
-		c["off"] = Vector3(offs[i].x, 0, offs[i].y)
-		c["logic"].position = c["off"]
-		squad_root.add_child(c["logic"])
-		attach_gun(c, weapon_idx)
-		play(c["ap"], "r_run", randf_range(0.95, 1.1), 0.0)
-		soldiers.append(c)
+	# shared look assets
+	shadow_mat = Crowd.blob_shadow_material()
+	shadow_mesh = Crowd.blob_shadow_mesh(1.0)
+	zombie_variants = [
+		Crowd.zombie_mesh(Color(0.58, 0.82, 0.42), Color(0.88, 0.32, 0.28), Color(0.25, 0.3, 0.5)),
+		Crowd.zombie_mesh(Color(0.5, 0.78, 0.72), Color(0.95, 0.78, 0.25), Color(0.3, 0.25, 0.32)),
+		Crowd.zombie_mesh(Color(0.78, 0.82, 0.45), Color(0.35, 0.6, 0.38), Color(0.42, 0.32, 0.25)),
+		Crowd.zombie_mesh(Color(0.72, 0.6, 0.85), Color(0.3, 0.3, 0.38), Color(0.2, 0.2, 0.26)),
+	]
+	bomber_mesh = Crowd.zombie_mesh(Color(0.95, 0.45, 0.35), Color(1.0, 0.55, 0.08), Color(0.2, 0.18, 0.2))
+	# the crowd: one draw call for every soldier you own
+	crowd_mat = Crowd.make_material(1.0, 11.0)
+	crowd_mm = MultiMesh.new()
+	crowd_mm.transform_format = MultiMesh.TRANSFORM_3D
+	crowd_mm.mesh = Crowd.soldier_mesh(Color(0.2, 0.5, 1.0), Color(0.12, 0.3, 0.8))
+	crowd_mm.instance_count = CROWD_MAX
+	crowd_mm.visible_instance_count = 0
+	crowd_mm.custom_aabb = AABB(Vector3(-9, -1, -4), Vector3(18, 6, 20))
+	var mmi := MultiMeshInstance3D.new()
+	mmi.multimesh = crowd_mm
+	mmi.material_override = crowd_mat
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	squad_root.add_child(mmi)
+	crowd_sh_mm = MultiMesh.new()
+	crowd_sh_mm.transform_format = MultiMesh.TRANSFORM_3D
+	crowd_sh_mm.mesh = shadow_mesh
+	crowd_sh_mm.instance_count = CROWD_MAX
+	crowd_sh_mm.visible_instance_count = 0
+	crowd_sh_mm.custom_aabb = crowd_mm.custom_aabb
+	var smi := MultiMeshInstance3D.new()
+	smi.multimesh = crowd_sh_mm
+	smi.material_override = shadow_mat
+	smi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	squad_root.add_child(smi)
+	crowd_pos.resize(CROWD_MAX)
+	crowd_app.resize(CROWD_MAX)
+	for i in range(CROWD_MAX):
+		crowd_app[i] = -1.0
+	# the hero: the one fully animated Mixamo soldier leading the pack
+	var hero_path := "res://assets/soldiers/swat_camo.glb"
+	if str(save["hero"]) != "":
+		hero_path = "res://assets/heroes/%s.glb" % str(save["hero"])
+	var c := make_char(hero_path, 2.7)
+	c["off"] = Vector3(0, 0, -0.2)
+	c["logic"].position = c["off"]
+	squad_root.add_child(c["logic"])
+	attach_gun(c, weapon_idx)
+	play(c["ap"], "r_run", 1.0, 0.0)
+	soldiers.append(c)
 	update_squad_visibility()
 
+func crowd_n() -> int:
+	return clampi(squad_count - 1, 0, CROWD_MAX)
+
+func crowd_target(i: int, n: int) -> Vector3:
+	var cols := mini(10, int(ceil(sqrt(float(n) * 1.8))))
+	cols = maxi(cols, 2)
+	var sp := minf(0.6, 5.0 / float(cols))
+	var row := i / cols
+	var col := i % cols
+	var in_row := cols if (row + 1) * cols <= n else n - row * cols
+	var x := (float(col) - float(in_row - 1) * 0.5) * sp
+	if row % 2 == 1:
+		x += sp * 0.22
+	var z := 1.3 + float(row) * sp * 0.85
+	x += sin(float(i) * 12.9898) * 0.09
+	z += sin(float(i) * 78.233) * 0.09
+	return Vector3(x, 0, z)
+
+func update_crowd(delta: float) -> void:
+	var n := crowd_n()
+	var k := clampf(delta * 7.0, 0.0, 1.0)
+	for i in range(n):
+		if crowd_app[i] < 0.0:
+			crowd_pos[i] = Vector3(randf_range(-0.4, 0.4), 0, randf_range(0.2, 1.0))
+			crowd_app[i] = 0.0
+		crowd_app[i] = minf(1.0, crowd_app[i] + delta * 4.5)
+		crowd_pos[i] = crowd_pos[i].lerp(crowd_target(i, n), k)
+		var a: float = crowd_app[i]
+		var sc := CROWD_SCALE * (0.3 + 0.7 * a) * (1.0 + 0.3 * sin(a * PI))
+		var p: Vector3 = crowd_pos[i]
+		crowd_mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3(sc, sc, sc)), p))
+		var ss := 1.25 * (0.3 + 0.7 * a)
+		crowd_sh_mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3(ss, ss, ss)), p + Vector3(0, 0.04, 0)))
+
 func update_squad_visibility() -> void:
-	var shown := mini(squad_count, SQUAD_SHOW)
-	for i in range(soldiers.size()):
-		soldiers[i]["logic"].visible = i < shown
+	var n := crowd_n()
+	crowd_mm.visible_instance_count = n
+	crowd_sh_mm.visible_instance_count = n
+	for i in range(n, CROWD_MAX):
+		crowd_app[i] = -1.0
 	count_label.text = str(squad_count)
 	count_label.visible = squad_count > 0
+	if soldiers.size() > 0:
+		(soldiers[0]["logic"] as Node3D).visible = squad_count > 0
 
 func set_weapon(i: int) -> void:
 	weapon_idx = clampi(i, 0, WEAPONS.size() - 1)
@@ -972,7 +1057,7 @@ func queue_event(ev: Dictionary) -> void:
 		"rescue":
 			spawn_queue.append({"fn": "rescue", "z": z, "x": ev["x"]})
 		"horde":
-			var n: int = ev["n"]
+			var n: int = int(ev["n"] * 2)
 			for i in range(n):
 				var kind: String = ev["kind"]
 				if kind == "mixed":
@@ -1036,19 +1121,19 @@ func spawn_zombie(job: Dictionary) -> void:
 	match kind:
 		"walker":
 			path = "res://assets/zombies/%s.glb" % WALKERS[randi() % WALKERS.size()]
-			h = randf_range(2.35, 2.7)
+			h = randf_range(1.95, 2.3)
 			hp = 90.0
 			spd = randf_range(1.5, 2.1)
 		"runner":
 			path = "res://assets/zombies/%s.glb" % RUNNERS[randi() % RUNNERS.size()]
-			h = randf_range(2.2, 2.5)
+			h = randf_range(1.8, 2.05)
 			hp = 60.0
 			spd = randf_range(3.4, 4.2)
 			anim = "z_run"
 			anim_speed = 1.0
 		"bomber":
 			path = "res://assets/zombies/skinless.glb"
-			h = 2.4
+			h = 2.1
 			hp = 45.0
 			spd = 3.0
 			anim = "z_run"
@@ -1067,27 +1152,54 @@ func spawn_zombie(job: Dictionary) -> void:
 			dmg = 6.0
 	if kind != "boss":
 		hp *= float(zone["hpm"])
-	var c := make_char(path, h)
-	if kind == "bomber":
-		darken(c["model"], Color(2.4, 0.8, 0.6))
+	var cheap := kind in ["walker", "runner", "bomber"]
+	var c: Dictionary
+	if cheap:
+		c = make_cheap_zombie(kind, h)
 	else:
+		c = make_char(path, h)
 		for mi in (c["model"] as Node).find_children("*", "MeshInstance3D", true, false):
 			(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	(c["ap"] as AnimationPlayer).callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+		(c["ap"] as AnimationPlayer).callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	var logic: Node3D = c["logic"]
 	add_child(logic)
 	logic.position = Vector3(job["x"], 0, job["z"])
 	logic.rotation.y = 0.0
 	var z := {"c": c, "logic": logic, "ap": c["ap"], "hp": hp, "maxhp": hp, "spd": spd, "anim": anim, "anim_speed": anim_speed, "dmg": dmg, "kind": kind,
-		"state": "idle", "atk_t": 0.0, "dead_t": 0.0, "acc": 0.0, "radius": 0.9 if kind != "boss" else 2.4, "h": h, "off": randf() * 6.0}
-	play(c["ap"], "z_idle", randf_range(0.8, 1.2), 0.0)
-	if c["ap"].has_animation("z_idle"):
-		c["ap"].seek(randf() * 3.0, true)
+		"state": "idle", "atk_t": 0.0, "dead_t": 0.0, "acc": 0.0, "radius": 0.9 if kind != "boss" else 2.4, "h": h, "off": randf() * 6.0, "cheap": cheap, "hit_t": 0.0}
+	if cheap:
+		(c["mat"] as ShaderMaterial).set_shader_parameter("run", 0.15)
+	else:
+		play(c["ap"], "z_idle", randf_range(0.8, 1.2), 0.0)
+		if c["ap"].has_animation("z_idle"):
+			c["ap"].seek(randf() * 3.0, true)
 	if kind == "boss":
 		boss = z
 		boss_bar.max_value = hp
 		boss_bar.value = hp
 	zombies.append(z)
+
+func make_cheap_zombie(kind: String, h: float) -> Dictionary:
+	var logic := Node3D.new()
+	var body := MeshInstance3D.new()
+	body.mesh = bomber_mesh if kind == "bomber" else zombie_variants[randi() % zombie_variants.size()]
+	var m := Crowd.make_material(0.0, 15.0 if kind != "walker" else randf_range(7.5, 9.5))
+	m.set_shader_parameter("inst_phase", 0.0)
+	m.set_shader_parameter("phase", randf() * 6.28)
+	body.material_override = m
+	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var s := h / 1.3
+	var wide := 1.0 + (0.25 if (kind == "walker" and randf() < 0.25) else 0.0)
+	body.scale = Vector3(s * wide, s, s * wide)
+	logic.add_child(body)
+	var sh := MeshInstance3D.new()
+	sh.mesh = shadow_mesh
+	sh.material_override = shadow_mat
+	sh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	sh.scale = Vector3.ONE * s * 1.3
+	sh.position.y = 0.04
+	logic.add_child(sh)
+	return {"logic": logic, "model": body, "holder": body, "ap": null, "skel": null, "mat": m, "body": body, "shadow": sh}
 
 func spawn_rescue(job: Dictionary) -> void:
 	var nm: String = CIVILIANS[randi() % CIVILIANS.size()]
@@ -1269,6 +1381,9 @@ func damage_zombie(z: Dictionary, amount: float) -> void:
 	if z["state"] == "dead":
 		return
 	z["hp"] -= amount
+	if z["cheap"] and z["hp"] > 0.0:
+		z["hit_t"] = 0.09
+		(z["c"]["mat"] as ShaderMaterial).set_shader_parameter("flash", 0.5)
 	if z == boss:
 		boss_bar.max_value = z["maxhp"]
 		boss_bar.value = maxf(z["hp"], 0.0)
@@ -1281,7 +1396,20 @@ func damage_zombie(z: Dictionary, amount: float) -> void:
 		var lp := (z["logic"] as Node3D).global_position
 		blood(lp + Vector3(0, 1.2, 0), z["kind"] in ["elite", "boss"])
 		snd("zdie", -10.0, randf_range(0.85, 1.15))
-		play(z["ap"], "z_death" if randf() < 0.5 else "z_dying", 1.0, 0.1)
+		if z["cheap"]:
+			var b: Node3D = z["c"]["body"]
+			(z["c"]["mat"] as ShaderMaterial).set_shader_parameter("run", 0.0)
+			(z["c"]["mat"] as ShaderMaterial).set_shader_parameter("flash", 0.0)
+			var lg2: Node3D = z["logic"]
+			var tw := create_tween()
+			tw.set_parallel(true)
+			tw.tween_property(b, "rotation:x", -1.5, 0.2)
+			tw.tween_property(b, "position:y", 0.1, 0.2)
+			tw.tween_property(lg2, "position:z", lg2.position.z - 0.9, 0.25)
+			tw.chain().tween_interval(0.35)
+			tw.chain().tween_property(b, "scale", Vector3.ZERO, 0.3)
+		else:
+			play(z["ap"], "z_death" if randf() < 0.5 else "z_dying", 1.0, 0.1)
 		if z["kind"] == "bomber":
 			explode_at(lp, z)
 		z["dead_t"] = 0.0
@@ -1304,21 +1432,23 @@ func _process(delta: float) -> void:
 		_autoplay_step(delta)
 	# camera follow (also in menu)
 	var cz: float = squad_root.position.z
-	var want := Vector3(squad_x * 0.45, 6.4 + shake * 0.5 * sin(elapsed * 60.0), cz + 8.6)
+	var want := Vector3(squad_x * 0.45, 9.0 + shake * 0.5 * sin(elapsed * 60.0), cz + 11.0)
 	cam.position = cam.position.lerp(want, clampf(delta * 6.0, 0.0, 1.0))
 	if cam.position.distance_to(want) > 30.0:
 		cam.position = want
-	cam.look_at(Vector3(squad_x * 0.35, 1.0, cz - 7.5), Vector3.UP)
+	cam.look_at(Vector3(squad_x * 0.35, 0.6, cz - 8.0), Vector3.UP)
 	shake = maxf(0.0, shake - delta)
 	update_tracers(delta)
 	if state != "play":
+		crowd_mat.set_shader_parameter("run", 0.12)
+		update_crowd(delta)
 		return
 
 	# spawn queue + events
 	while next_event < level.size() and float(level[next_event]["d"]) - dist < SPAWN_AHEAD:
 		queue_event(level[next_event])
 		next_event += 1
-	var budget := 3
+	var budget := 6
 	while budget > 0 and spawn_queue.size() > 0:
 		var job: Dictionary = spawn_queue.pop_front()
 		if job["fn"] == "zombie":
@@ -1354,40 +1484,39 @@ func _process(delta: float) -> void:
 	squad_root.position = Vector3(squad_x, 0, -dist)
 	progress.value = dist
 
-	# soldiers' animation + follow wobble
+	# hero animation + crowd
 	var moving := speed_factor > 0.55
-	for i in range(soldiers.size()):
-		var c: Dictionary = soldiers[i]
-		if not c["logic"].visible:
-			continue
+	for c in soldiers:
 		play(c["ap"], "r_run" if moving else "r_idle_aim", 1.0, 0.2)
-		var lp: Vector3 = c["off"] + Vector3(sin(elapsed * 2.0 + i) * 0.08, 0, 0)
-		c["logic"].position = c["logic"].position.lerp(lp, clampf(delta * 8.0, 0.0, 1.0))
+	crowd_mat.set_shader_parameter("run", 1.0 if moving else 0.12)
+	update_crowd(delta)
 
 	# firing
 	fire_t -= delta
 	if fire_t <= 0.0 and not tgt.is_empty():
 		fire_t = float(w["rate"]) / rate_mult
-		var shown := mini(squad_count, SQUAD_SHOW)
-		var per_shot: float = float(w["dmg"]) * dmg_mult * (float(squad_count) / float(maxi(shown, 1)))
+		var total: float = float(w["dmg"]) * dmg_mult * float(squad_count)
 		snd("shot%d" % (1 + randi() % 3), -9.0, randf_range(0.92, 1.1) * (1.1 if weapon_idx == 1 else (0.9 if weapon_idx == 3 else 1.0)))
-		var tp: Vector3 = (tgt["logic"] as Node3D).global_position + Vector3(0, tgt["h"] * 0.6, 0)
-		var hit_n := 0
-		for i in range(shown):
-			var c: Dictionary = soldiers[i]
-			var from: Vector3 = (c["logic"] as Node3D).global_position + Vector3(0.25, 1.35, -0.9)
-			add_tracer(from, tp + Vector3(randf_range(-0.2, 0.2), randf_range(-0.2, 0.2), 0), w["col"])
-			if i < 4:
-				flash(from + Vector3(0, 0, -0.1), w["col"])
-			hit_n += 1
-		damage_zombie(tgt, per_shot * float(hit_n))
+		var tp: Vector3 = (tgt["logic"] as Node3D).global_position + Vector3(0, float(tgt["h"]) * 0.55, 0)
+		var base := squad_root.global_position
+		var hero_from: Vector3 = (soldiers[0]["logic"] as Node3D).global_position + Vector3(0.3, 1.45, -1.1)
+		add_tracer(hero_from, tp + Vector3(randf_range(-0.2, 0.2), randf_range(-0.2, 0.2), 0), w["col"])
+		flash(hero_from + Vector3(0, 0, -0.1), w["col"])
+		var cn := crowd_n()
+		for k in range(mini(cn, 6)):
+			var idx := randi() % cn
+			var from: Vector3 = base + crowd_pos[idx] + Vector3(0.07, 1.0, -1.1)
+			add_tracer(from, tp + Vector3(randf_range(-0.3, 0.3), randf_range(-0.3, 0.3), 0), w["col"])
+			if k < 3:
+				flash(from, w["col"])
+		damage_zombie(tgt, total)
 		# splash so hordes thin out (squad is a crowd, bullets spray)
-		if per_shot * hit_n > 120.0:
+		if total > 120.0:
 			for z in zombies:
 				if z != tgt and z["state"] != "dead":
 					var dp := ((z["logic"] as Node3D).position - (tgt["logic"] as Node3D).position)
 					if dp.length() < 1.6:
-						damage_zombie(z, per_shot * float(hit_n) * 0.25)
+						damage_zombie(z, total * 0.25)
 		if randf() < 0.35:
 			blood(tp, false)
 
@@ -1424,25 +1553,32 @@ func _process(delta: float) -> void:
 		var lg: Node3D = z["logic"]
 		if z["state"] == "dead":
 			z["dead_t"] += delta
-			(z["ap"] as AnimationPlayer).advance(delta)
-			if z["dead_t"] > 3.0:
+			if not z["cheap"]:
+				(z["ap"] as AnimationPlayer).advance(delta)
+			if z["dead_t"] > (1.2 if z["cheap"] else 3.0):
 				lg.queue_free()
 				zombies.remove_at(i2)
 			i2 -= 1
 			continue
 		var to := Vector3(squad_p.x - lg.position.x, 0, squad_p.z - lg.position.z)
 		var dlen := to.length()
+		if z["hit_t"] > 0.0:
+			z["hit_t"] -= delta
+			if z["hit_t"] <= 0.0 and z["cheap"]:
+				(z["c"]["mat"] as ShaderMaterial).set_shader_parameter("flash", 0.0)
 		if z["state"] == "idle":
 			if dlen < WAKE_DIST or lg.position.z > squad_p.z - 2.0:
 				z["state"] = "chase"
 				play(z["ap"], z["anim"], float(z["anim_speed"]) * randf_range(0.9, 1.1), 0.2)
+				if z["cheap"]:
+					(z["c"]["mat"] as ShaderMaterial).set_shader_parameter("run", 1.0)
 			else:
 				i2 -= 1
 				continue
 		if z["state"] == "chase" or z["state"] == "attack":
 			z["acc"] += delta
 			var far_z: bool = dlen > 22.0
-			if not far_z or z["acc"] >= 0.07:
+			if not z["cheap"] and (not far_z or z["acc"] >= 0.07):
 				(z["ap"] as AnimationPlayer).advance(z["acc"])
 				z["acc"] = 0.0
 			var reach: float = 1.3 + float(z["radius"])
@@ -1453,6 +1589,8 @@ func _process(delta: float) -> void:
 				if z["state"] == "attack":
 					z["state"] = "chase"
 					play(z["ap"], z["anim"], float(z["anim_speed"]), 0.2)
+					if z["cheap"]:
+						(z["c"]["mat"] as ShaderMaterial).set_shader_parameter("run", 1.0)
 			elif dlen <= reach and z["kind"] == "bomber":
 				z["state"] = "dead"
 				z["dead_t"] = 99.0
@@ -1464,6 +1602,8 @@ func _process(delta: float) -> void:
 				if z["state"] != "attack":
 					z["state"] = "attack"
 					play(z["ap"], "z_attack", 1.2, 0.15)
+					if z["cheap"]:
+						(z["c"]["mat"] as ShaderMaterial).set_shader_parameter("run", 0.35)
 				z["atk_t"] += delta
 				if z["atk_t"] >= 1.0:
 					z["atk_t"] = 0.0
